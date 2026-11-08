@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H₂ ICE Design &amp; Simulation Laboratory</title>
+<style>
+:root{
+  --bg:#f3f5f9; --card:#fff; --line:#e3e8ef; --line2:#eef1f6;
+  --ink:#1b2534; --ink2:#48566b; --mut:#78869b; --accent:#1d4ed8;
+  --accent-soft:#e8efff; --good:#15803d; --warn:#b45309; --bad:#b91c1c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.05);
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:13px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:-.01em}
+h1{font-size:16px}
+h2{font-size:14px}
+h3{font-size:12.5px}
+small{font-size:11px}
+
+/* ---------- header ---------- */
+.app-header{
+  position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:14px;padding:9px 18px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand .dot{
+  width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#1d4ed8,#0ea5e9);
+  display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;flex:none;
+}
+.brand .sub{color:var(--mut);font-size:11px;margin-top:1px}
+.header-spacer{flex:1}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
+  background:var(--accent-soft);color:#1e40af;font-size:11px;font-weight:600;white-space:nowrap;
+}
+.chip.gray{background:#f1f4f9;color:var(--ink2)}
+.chip.good{background:#e8f7ee;color:var(--good)}
+.chip.warn{background:#fff4e5;color:var(--warn)}
+.chip.bad{background:#fdecec;color:var(--bad)}
+.toggle{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+  background:#fff;border-radius:8px;padding:4px 9px;font-size:11.5px;color:var(--ink2);
+}
+.toggle input{accent-color:var(--accent)}
+
+/* ---------- tabs ---------- */
+.tabs{
+  position:sticky;top:47px;z-index:35;background:#fff;border-bottom:1px solid var(--line);
+  display:flex;gap:2px;padding:0 12px;overflow-x:auto;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{
+  border:0;background:transparent;padding:9px 11px;font-size:12px;color:var(--ink2);
+  border-bottom:2px solid transparent;white-space:nowrap;font-weight:550;
+}
+.tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs button:hover{color:var(--ink)}
+
+/* ---------- layout ---------- */
+.layout{
+  display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:14px;
+  padding:14px 18px 40px;max-width:1680px;margin:0 auto;align-items:start;
+}
+@media(max-width:1120px){.layout{grid-template-columns:minmax(0,1fr)}}
+main{min-width:0}
+aside{display:flex;flex-direction:column;gap:12px;position:sticky;top:100px;align-self:start}
+@media(max-width:1120px){aside{position:static}}
+.panel{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:13px 15px;margin-bottom:12px;
+}
+.panel.tight{padding:11px 13px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.panel-head h2,.panel-head h3{display:flex;align-items:center;gap:6px}
+.panel-head .hint{color:var(--mut);font-size:11px;font-weight:400}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ---------- controls ---------- */
+.ctrl{margin-bottom:9px}
+.ctrl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px}
+.ctrl-head label{font-size:11.5px;color:var(--ink2);font-weight:550}
+.ctrl-head .val{font-size:11.5px;color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctrl-head .val b{font-weight:700}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:#dbe2ec}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);
+  border:2px solid #fff;box-shadow:0 0 0 1px #c7d4ea;margin-top:-4.5px;
+}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#dbe2ec}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--accent);border:2px solid #fff}
+select,input[type=number],input[type=text]{
+  width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:#fff;
+  color:var(--ink);font-size:12px;font-family:inherit;
+}
+select:focus,input:focus{outline:2px solid var(--accent-soft);border-color:#b9cdf3}
+.help{font-size:10.5px;color:var(--mut);margin-top:1px;line-height:1.35}
+
+/* ---------- readout rows ---------- */
+.rows{display:flex;flex-direction:column;gap:5px}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:2px 0;border-bottom:1px dashed var(--line2)}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--ink2)}
+.row .v{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.row .v u{text-decoration:none;color:var(--mut);font-weight:400;font-size:10.5px;margin-left:2px}
+
+/* ---------- telemetry tiles ---------- */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tile{
+  border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fbfcfe;
+}
+.tile .l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+.tile .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.2}
+.tile .v u{text-decoration:none;font-size:10px;font-weight:500;color:var(--mut);margin-left:2px}
+
+/* ---------- charts ---------- */
+.chart-wrap{position:relative;width:100%;height:190px}
+.chart-wrap.tall{height:250px}
+.chart-wrap canvas{width:100%;height:100%;display:block}
+.chart-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.chart-title .t{font-size:11.5px;font-weight:600;color:var(--ink2)}
+.chart-title .u{font-size:10.5px;color:var(--mut)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--ink2);margin-top:3px}
+.legend i{display:inline-block;width:9px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+
+/* ---------- diagnostics ---------- */
+.diag{border-left:3px solid var(--line);padding:7px 10px;border-radius:0 7px 7px 0;background:#fbfcfe;margin-bottom:7px}
+.diag.high{border-left-color:var(--bad);background:#fdf4f4}
+.diag.med{border-left-color:var(--warn);background:#fffaf2}
+.diag.low{border-left-color:#2563eb;background:#f5f8ff}
+.diag.ok{border-left-color:var(--good);background:#f4fbf6}
+.diag .dt{font-weight:650;font-size:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.diag .cat{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+.diag .dd{font-size:11.5px;color:var(--ink2);margin-top:3px}
+.diag .dd b{color:var(--ink)}
+.diag .steps{font-size:11px;color:var(--mut);margin-top:3px}
+.diag .steps b{color:var(--ink2)}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  border:1px solid var(--line);background:#fff;color:var(--ink2);border-radius:8px;
+  padding:5px 11px;font-size:11.5px;font-weight:600;transition:.15s;
+}
+.btn:hover{border-color:#c7d4ea;background:#f7f9fd}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#1a44bd}
+.btn.danger{color:var(--bad);border-color:#f3cccc}
+.btn.danger:hover{background:#fdf2f2}
+.btn.sm{padding:3px 8px;font-size:11px}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- table ---------- */
+table.t{width:100%;border-collapse:collapse;font-size:11.5px}
+table.t th,table.t td{padding:5px 7px;text-align:right;border-bottom:1px solid var(--line2);font-variant-numeric:tabular-nums}
+table.t th{color:var(--mut);font-weight:600;text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t tr:last-child td{border-bottom:0}
+
+/* ---------- animation ---------- */
+#engineCanvas{width:100%;height:360px;display:block;border-radius:8px;background:linear-gradient(180deg,#f8fafd,#eef2f8)}
+.anim-bar{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.anim-bar .sp{flex:1}
+.anim-bar button{width:30px;height:26px;padding:0;display:grid;place-items:center}
+
+/* ---------- modal ---------- */
+.modal{
+  position:fixed;inset:0;background:rgba(20,28,42,.42);z-index:100;
+  display:none;align-items:center;justify-content:center;padding:18px;
+}
+.modal.open{display:flex}
+.modal-box{
+  background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:86vh;overflow:auto;
+  padding:18px 20px;box-shadow:0 12px 40px rgba(10,20,40,.28);position:relative;
+}
+.modal-box h3{font-size:15px;margin-bottom:2px;padding-right:26px}
+.modal-close{
+  position:absolute;top:10px;right:12px;border:0;background:#f1f4f9;border-radius:7px;
+  width:26px;height:26px;font-size:16px;color:var(--ink2);line-height:1;
+}
+.modal .kv{display:grid;grid-template-columns:92px 1fr;gap:5px 10px;font-size:12px;margin-top:10px}
+.modal .kv .k{color:var(--mut);font-weight:600}
+.modal .kv .v{color:var(--ink2)}
+.modal .note{margin-top:10px;font-size:11px;color:var(--mut);border-top:1px solid var(--line2);padding-top:8px}
+
+/* ---------- misc ---------- */
+.disclaimer{
+  background:#fffaf0;border:1px solid #f3e2c0;color:#8a5a12;border-radius:9px;
+  padding:8px 11px;font-size:11px;line-height:1.5;margin-bottom:12px;
+}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:14px 0 7px}
+.section-title:first-child{margin-top:0}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.02em}
+.pill.ok{background:#e8f7ee;color:var(--good)}
+.pill.est{background:#eef2f8;color:var(--ink2)}
+.pill.warn{background:#fff4e5;color:var(--warn)}
+.pill.bad{background:#fdecec;color:var(--bad)}
+.hidden{display:none!important}
+.mt8{margin-top:8px}.mt12{margin-top:12px}
+.muted{color:var(--mut)}
+.mini{font-size:10.5px;color:var(--mut)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.two-col{grid-template-columns:1fr}}
+.library-list{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto}
+.lib-item{
+  display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;
+  padding:6px 9px;background:#fbfcfe;
+}
+.lib-item .nm{flex:1;min-width:0;font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib-item .meta{font-size:10.5px;color:var(--mut);white-space:nowrap}
+.task{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line2)}
+.task:last-child{border-bottom:0}
+.task input{margin-top:2px;accent-color:var(--accent)}
+.task .tt{flex:1}
+.task .tt b{font-size:12px}
+.task .tt div{font-size:11px;color:var(--mut);margin-top:1px}
+.task .tt .reveal{display:none;margin-top:3px;color:var(--ink2);font-size:11px;background:#f5f8ff;border-radius:6px;padding:5px 8px}
+.task .tt .reveal.show{display:block}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="dot">H₂</div>
+    <div>
+      <h1>Hydrogen ICE Design &amp; Simulation Laboratory</h1>
+      <div class="sub">Educational single-zone thermodynamics · not a validated engine model</div>
+    </div>
+  </div>
+  <div class="header-spacer"></div>
+  <span class="chip" id="hdrFuel">H₂ · Spark Ignition</span>
+  <span class="chip gray" id="hdrDesign">Baseline</span>
+  <label class="toggle" title="Show explanations when clicking parameters">
+    <input type="checkbox" id="learnToggle"> Learning mode
+  </label>
+  <label class="toggle" title="Reduce animation / chart redraw rate (calculations unchanged)">
+    <input type="checkbox" id="perfToggle"> Low-performance mode
+  </label>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="active">Engine Overview</button>
+  <button data-tab="architecture">Architecture</button>
+  <button data-tab="geometry">Geometry &amp; Sizing</button>
+  <button data-tab="fuel">Fuel &amp; Chemistry</button>
+  <button data-tab="air">Air Management</button>
+  <button data-tab="combustion">Combustion Lab</button>
+  <button data-tab="thermal">Thermal Lab</button>
+  <button data-tab="live">Live Simulation</button>
+  <button data-tab="analysis">Engineering Analysis</button>
+  <button data-tab="diagnostics">Diagnostics</button>
+  <button data-tab="library">Design Library</button>
+  <button data-tab="learning">Learning Centre</button>
+</nav>
+
+<div class="layout">
+  <main id="main"></main>
+
+  <aside>
+    <div class="panel tight">
+      <div class="panel-head" style="margin-bottom:6px">
+        <h3>Engine Cross-Section</h3>
+        <span class="chip gray" id="strokeChip">Intake</span>
+      </div>
+      <canvas id="engineCanvas"></canvas>
+      <div class="anim-bar">
+        <button class="btn" id="animPlay" title="Play/Pause">❚❚</button>
+        <button class="btn" id="animReset" title="Reset to 0°">⟲</button>
+        <span class="mini" id="thetaLabel">0°</span>
+        <div class="sp"></div>
+        <span class="mini">Speed</span>
+        <input type="range" id="animSpeed" min="0.1" max="4" step="0.1" value="1" style="width:80px">
+      </div>
+    </div>
+
+    <div class="panel tight">
+      <div class="panel-head" style="margin-bottom:7px">
+        <h3>Live Telemetry</h3>
+        <span class="mini" id="telState">—</span>
+      </div>
+      <div class="tiles" id="telemetry"></div>
+    </div>
+
+    <div class="panel tight">
+      <div class="panel-head" style="margin-bottom:6px">
+        <h3>Active Diagnostics</h3>
+        <span class="mini" id="diagCount">0</span>
+      </div>
+      <div id="diagMini" style="max-height:230px;overflow:auto"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">×</button>
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   HYDROGEN ICE DESIGN & SIMULATION LABORATORY
+   ----------------------------------------------------------------------------
+   Model hierarchy:
+     L1 Geometry & kinematics   – exact slider-crank equations
+     L2 Thermodynamics          – single-zone, first-law crank-angle integration
+                                  with temperature-dependent cv (sealed period)
+     L3 Gas exchange            – valve flow-loss model + volumetric efficiency
+     L4 Combustion              – Wiebe burned-fraction heat release
+     L5 Mechanical              – Chen–Flynn FMEP correlation
+     L6 Heat transfer           – Woschni correlation + simplified thermal network
+   All internal calculations use SI units. Display units are converted at render.
+   ========================================================================== */
+
+/* ------------------------------ utilities ------------------------------ */
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const deepClone=o=>JSON.parse(JSON.stringify(o));
+function fmt(v,d=1){
+  if(v===null||v===undefined||!isFinite(v))return '—';
+  const a=Math.abs(v);
+  if(a!==0&&(a<0.01||a>=1e6))return v.toExponential(2);
+  return Number(v).toFixed(d);
+}
+function getPath(o,p){return p.split('.').reduce((x,k)=>x==null?x:x[k],o);}
+function setPath(o,p,v){const a=p.split('.');let x=o;for(let i=0;i<a.length-1;i++)x=x[a[i]];x[a[a.length-1]]=v;}
+function niceTicks(min,max,n){
+  if(!isFinite(min)||!isFinite(max)||max<=min)return [min];
+  const raw=(max-min)/n, mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const norm=raw/mag; let step;
+  if(norm<1.5)step=1*mag; else if(norm<3)step=2*mag; else if(norm<7)step=5*mag; else step=10*mag;
+  const out=[]; let s=Math.ceil(min/step)*step;
+  for(let i=0;i<40&&s<=max+1e-9;i++){out.push(s);s+=step;}
+  return out;
+}
+
+/* ------------------------------ fuel data ------------------------------ */
+/* LHV/HHV in J/kg; AFR stoichiometric by mass; R in J/(kg·K). */
+const FUELS={
+  H2:{
+    name:'Hydrogen (H₂)', short:'H₂', afrStoich:34.3, lhv:120e6, hhv:142e6, R:4124,
+    reaction:'2H₂ + O₂ → 2H₂O',
+    o2Stoich:8.0, // kg O₂ per kg fuel
+    products:'H₂O',
+    notes:'Very low ignition energy, wide flammability range, fast flame speed, no carbon.'
+  },
+  CH4:{
+    name:'Methane (CH₄)', short:'CH₄', afrStoich:17.2, lhv:50.0e6, hhv:55.5e6, R:518,
+    reaction:'CH₄ + 2O₂ → CO₂ + 2H₂O',
+    o2Stoich:4.0,
+    products:'CO₂ + H₂O',
+    notes:'Comparison fuel. Higher carbon content, slower flame than H₂.'
+  },
+  C8H18:{
+    name:'Gasoline (C₈H₁₈)', short:'C₈H₁₈', afrStoich:14.7, lhv:44.0e6, hhv:47.3e6, R:72,
+    reaction:'C₈H₁₈ + 12.5O₂ → 8CO₂ + 9H₂O',
+    o2Stoich:3.51,
+    products:'CO₂ + H₂O',
+    notes:'Comparison fuel. Liquid, pre-vaporised in this model.'
+  }
+};
+
+/* ------------------------------ default config ------------------------------ */
+const DEFAULT_CONFIG={
+  id:'baseline', name:'H₂ Baseline I4',
+  architecture:{
+    strokeType:4, cylinders:4, layout:'inline', aspiration:'na', fuel:'H2',
+    valvesPerCyl:4, valveArrangement:'DOHC', firingOrder:'1-3-4-2', pistonCrown:'flat'
+  },
+  geometry:{
+    bore_mm:80, stroke_mm:90, rodLength_mm:150, compressionRatio:12,
+    intakeValveDia_mm:32, exhaustValveDia_mm:28, valveLift_mm:10,
+    ivo_degBTDC:10, ivc_degABDC:50, evo_degBBDC:50, evc_degATDC:10
+  },
+  operating:{
+    rpm:3000, throttle:100,
+    ambientPressure_kPa:101.325, ambientTemp_C:25, intakeTemp_C:30,
+    coolantTemp_C:85, oilTemp_C:95,
+    exhaustBackpressure_kPa:5, intakeLoss_kPa:3, humidity:0, frictionScale:1.0
+  },
+  fuelControl:{ mode:'lambda', lambdaTarget:2.0, fuelFlow_gps:0.55 },
+  combustion:{ sparkAdvance_degBTDC:15, combustionDuration_deg:50, wiebe_m:2.0, wallTemp_C:180 },
+  aspirationParams:{ boost_kPa:50, intercoolerEff:0.7 }
+};
+
+/* ------------------------------ global state ------------------------------ */
+const STATE={ cfg:deepClone(DEFAULT_CONFIG), geom:null, gas:null, cycle:null, perf:null,
+  diags:[], sweep:null, error:null, activeTab:'overview' };
+const ANIM={ playing:true, theta:0, speed:1, last:0, acc:0 };
+const UI={ lowPerf:false, learn:false };
+
+/* ============================ L1 · GEOMETRY ============================ */
+function pistonPosition(thetaDeg,geom){
+  const th=thetaDeg*Math.PI/180, r=geom.r, L=geom.L;
+  const s=r*(1-Math.cos(th))+L*(1-Math.sqrt(1-Math.pow(r/L*Math.sin(th),2)));
+  return s; // m from TDC
+}
+function pistonPositionMod(thetaDeg,geom){
+  const t=((thetaDeg%360)+360)%360;
+  return pistonPosition(t,geom);
+}
+function pistonVelocity(thetaDeg,geom,rpm){
+  const th=thetaDeg*Math.PI/180, r=geom.r, L=geom.L, w=2*Math.PI*rpm/60;
+  const denom=Math.sqrt(Math.max(1e-12,L*L-r*r*Math.sin(th)*Math.sin(th)));
+  return (r*Math.sin(th)+(r*r*Math.sin(th)*Math.cos(th))/denom)*w;
+}
+function computeGeometry(cfg){
+  const g=cfg.geometry, n=cfg.architecture.cylinders;
+  const B=g.bore_mm/1000, S=g.stroke_mm/1000, L=g.rodLength_mm/1000, r=S/2;
+  const Ap=Math.PI/4*B*B;
+  const Vd=Ap*S, VdTotal=Vd*n, CR=g.compressionRatio, Vc=Vd/(CR-1);
+  const rpm=cfg.operating.rpm;
+  const Up=2*S*rpm/60;
+  const is4=cfg.architecture.strokeType===4;
+  const cycleDeg=is4?720:360;
+  const cycleTime=(cycleDeg/360)*60/Math.max(1,rpm);
+  return {B,S,L,r,Ap,Vd,VdTotal,Vc,Vtot:Vd+Vc,CR,Up,cycleDeg,cycleTime,
+    boreStroke:B/S, rodRatio:L/r, n};
+}
+
+/* ============================ L3 · GAS EXCHANGE ============================ */
+function computeGasExchange(cfg,geom){
+  const op=cfg.operating, ar=cfg.architecture, asp=cfg.aspirationParams;
+  const pAmb=op.ambientPressure_kPa*1000, TAmb=op.ambientTemp_C+273.15;
+  const TMan=op.intakeTemp_C+273.15;
+  let pMan;
+  if(ar.aspiration==='na'){
+    pMan=pAmb*(0.30+0.70*op.throttle/100)-op.intakeLoss_kPa*1000;
+  }else{
+    const boost=asp.boost_kPa*1000*(op.throttle/100);
+    pMan=pAmb+boost-op.intakeLoss_kPa*1000;
+    const pressureRatio=Math.max(1,pMan/pAmb);
+    const TcompOut=TAmb*Math.pow(pressureRatio,0.286);
+    // post-intercooler temp is informational; the user-set intake temperature is authoritative
+    var TpostIC=TcompOut-(TcompOut-TAmb)*clamp(asp.intercoolerEff,0,1);
+  }
+  pMan=Math.max(8000,pMan);
+  const pExh=pAmb+op.exhaustBackpressure_kPa*1000;
+  const Rair=287;
+  const rhoMan=pMan/(Rair*TMan);
+
+  // intake valve effective flow area
+  const nIv=Math.max(1,Math.floor(ar.valvesPerCyl/2));
+  const Cd=0.33;
+  const Aiv=nIv*Math.PI/4*Math.pow(cfg.geometry.intakeValveDia_mm/1000,2)*Cd;
+  const vIdeal=geom.Ap*geom.Up/Math.max(Aiv,1e-7);
+  const dpValve=0.5*rhoMan*vIdeal*vIdeal*1.2;
+  const pEff=Math.max(0.35*pMan,pMan-dpValve);
+
+  // volume at IVC
+  const thetaIVC=ar.strokeType===4?(180+cfg.geometry.ivc_degABDC):240;
+  const sIVC=pistonPositionMod(thetaIVC,geom);
+  const Vivc=geom.Vc+geom.Ap*sIVC;
+
+  // residual fraction estimate (needs an exhaust temperature guess; one iteration)
+  const TExhGuess=900;
+  let xr=clamp((geom.Vc/Vivc)*(pExh/Math.max(pEff,1)),0.01,0.30);
+  let Tivc=(1-xr)*TMan+xr*TExhGuess;
+
+  // trapped charge from IVC state
+  const Rcharge=Rair;
+  const mCharge=Math.max(1e-9,pEff*Vivc/(Rcharge*Tivc));
+  const fuel=FUELS[ar.fuel];
+  let lambda,mAir,mFuel;
+  if(cfg.fuelControl.mode==='lambda'){
+    lambda=clamp(cfg.fuelControl.lambdaTarget,0.4,8);
+    const f=1/(lambda*fuel.afrStoich);
+    mAir=mCharge/(1+f); mFuel=f*mAir;
+  }else{
+    const cyclesPerSec=(ar.strokeType===4?op.rpm/120:op.rpm/60);
+    const perCycle=Math.max(1e-12,(cfg.fuelControl.fuelFlow_gps/1000)/(ar.cylinders*Math.max(cyclesPerSec,1e-6)));
+    mFuel=Math.min(perCycle,mCharge*0.5);
+    mAir=Math.max(1e-12,mCharge-mFuel);
+    lambda=clamp(mAir/(mFuel*fuel.afrStoich),0.2,12);
+  }
+  const etaV=mAir/(rhoMan*geom.Vd);
+  const phi=1/lambda;
+  const pAmb_=pAmb;
+
+  return {pAmb,TAmb,TMan,pMan,pExh,rhoMan,pEff,dpValve,vIdeal,Aiv,Vivc,
+    xr,Tivc,mCharge,mAir,mFuel,lambda,phi,etaV,TpostIC: (typeof TpostIC==='number'?TpostIC:null),
+    fuel};
+}
+
+/* ============================ L4 · COMBUSTION HELPERS ============================ */
+function combustionEfficiency(lambda){
+  if(lambda<1)return clamp(0.50+0.48*lambda,0.4,0.97);
+  if(lambda<=3)return 0.98;
+  return clamp(0.98-0.06*(lambda-3),0.6,0.98);
+}
+function wiebe(theta,thetaSpark,duration,m){
+  if(theta<=thetaSpark)return 0;
+  if(theta>=thetaSpark+duration)return 1;
+  const x=(theta-thetaSpark)/duration;
+  return 1-Math.exp(-5*Math.pow(x,m+1));
+}
+function woschniH(B,p_kPa,T,Up){
+  const w=Math.max(0.2,2.28*Up);
+  return 3.26*Math.pow(B,-0.2)*Math.pow(Math.max(p_kPa,1),0.8)*
+         Math.pow(Math.max(T,200),-0.55)*Math.pow(w,0.8);
+}
+
+/* ============================ L2–L6 · FULL CYCLE SIMULATION ============================ */
+function simulateCycle(cfg){
+  const geom=computeGeometry(cfg);
+  const gas=computeGasExchange(cfg,geom);
+  const fuel=FUELS[cfg.architecture.fuel];
+  const is4=cfg.architecture.strokeType===4;
+  const cycleDeg=is4?720:360;
+  const rpm=Math.max(200,cfg.operating.rpm);
+  const omega=2*Math.PI*rpm/60;
+
+  // ---- angle grid ----
+  const N=cycleDeg+1;
+  const theta=new Float64Array(N), V=new Float64Array(N), p=new Float64Array(N),
+        T=new Float64Array(N), xb=new Float64Array(N), hr=new Float64Array(N),
+        xPist=new Float64Array(N);
+  for(let i=0;i<N;i++){
+    theta[i]=i;
+    xPist[i]=pistonPositionMod(i,geom);
+    V[i]=geom.Vc+geom.Ap*xPist[i];
+  }
+
+  // ---- valve timing (deg, 0 = TDC at start of intake) ----
+  let ivO,ivC,evO,evC,thetaSpark;
+  if(is4){
+    ivO=720-cfg.geometry.ivo_degBTDC;
+    ivC=180+cfg.geometry.ivc_degABDC;
+    evO=540-cfg.geometry.evo_degBBDC;
+    evC=720+cfg.geometry.evc_degATDC; // may exceed 720
+    thetaSpark=360-cfg.combustion.sparkAdvance_degBTDC;
+  }else{
+    ivO=120; ivC=240; evO=100; evC=260;
+    thetaSpark=360-cfg.combustion.sparkAdvance_degBTDC;
+  }
+  const ivCTot=((ivC%cycleDeg)+cycleDeg)%cycleDeg;
+  const evOTot=((evO%cycleDeg)+cycleDeg)%cycleDeg;
+
+  // closed period: IVC → EVO
+  const iStart=is4?Math.round(ivC):240;
+  const iEndRaw=is4?Math.round(evO):460;
+  const span=((iEndRaw-iStart)%cycleDeg+cycleDeg)%cycleDeg;
+
+  // ---- combustion setup ----
+  const etaComb=combustionEfficiency(gas.lambda);
+  const Qtotal=gas.mFuel*fuel.lhv*etaComb;
+  const durBase=cfg.combustion.combustionDuration_deg;
+  const dur=Math.max(12,durBase*(1+0.12*Math.max(0,gas.lambda-1.5)));
+
+  // ---- closed-period integration ----
+  const closed=new Uint8Array(cycleDeg);
+  let pCyl=gas.pEff, TCyl=gas.Tivc, xbCyl=0;
+  let QhtTotal=0, Wclosed=0, pMax=0, TMax=0, qFluxMax=0;
+  let pAtEvo=gas.pEff, TAtEvo=gas.Tivc;
+  const wallT=cfg.combustion.wallTemp_C+273.15;
+
+  const idx0=((iStart%cycleDeg)+cycleDeg)%cycleDeg;
+  p[idx0]=pCyl; T[idx0]=TCyl; xb[idx0]=0;
+  closed[idx0]=1;
+
+  for(let k=0;k<span;k++){
+    const i=(iStart+k)%cycleDeg;
+    const iN=(i+1)%cycleDeg;
+    closed[i]=1;
+    const Vc=V[i], Vn=V[iN], dV=Vn-Vc;
+
+    const xbNext=wiebe(i+1,thetaSpark,dur,cfg.combustion.wiebe_m);
+    const dxb=Math.max(0,xbNext-xbCyl);
+    // crude dissociation sink at very high temperature
+    const dissoc=1-0.10*clamp((TCyl-2400)/1000,0,1);
+    const dQc=Qtotal*dxb*dissoc;
+
+    const gammaU=1+287/(718+0.10*(TCyl-300));
+    const gammaB=1+340/(1000+0.32*(TCyl-300));
+    const gamma=(1-xbCyl)*gammaU+xbCyl*gammaB;
+    const Rg=(1-xbCyl)*287+xbCyl*340;
+    const cv=Rg/(gamma-1);
+
+    const h=woschniH(geom.B,pCyl/1000,TCyl,geom.Up);
+    const area=Math.PI*geom.B*xPist[i]+2*(Math.PI/4*geom.B*geom.B);
+    const dt=(Math.PI/180)/omega;
+    const dQht=h*area*(TCyl-wallT)*dt;
+
+    const dU=dQc-dQht-pCyl*dV;
+    const Tn=clamp(TCyl+dU/(gas.mCharge*cv),150,4200);
+    const pn=clamp(gas.mCharge*Rg*Tn/Math.max(Vn,1e-9),1000,4e7);
+
+    hr[i]=dQc; // J per degree
+    QhtTotal+=dQht;
+    Wclosed+=0.5*(pCyl+pn)*dV;
+    pMax=Math.max(pMax,pn); TMax=Math.max(TMax,Tn);
+    qFluxMax=Math.max(qFluxMax,h*(TCyl-wallT));
+
+    p[iN]=pn; T[iN]=Tn; xb[iN]=xbNext;
+    pCyl=pn; TCyl=Tn; xbCyl=xbNext;
+    pAtEvo=pn; TAtEvo=Tn;
+  }
+
+  // exhaust blow-down temperature
+  const gammaEnd=1+340/(1000+0.32*Math.max(TAtEvo-300,1));
+  const Texh=clamp(TAtEvo*Math.pow(gas.pExh/Math.max(pAtEvo,1),(gammaEnd-1)/gammaEnd),
+                   gas.TAmb, 1800);
+
+  // ---- fill open periods ----
+  const intakeOpen=th=>{ // th in [0,cycleDeg)
+    const t=((th%cycleDeg)+cycleDeg)%cycleDeg;
+    if(is4){
+      // open 710→720→0→230
+      return t>=ivO || t<=ivCTot;
+    }
+    return t>=ivO && t<=ivC;
+  };
+  const exhaustOpen=th=>{
+    const t=((th%cycleDeg)+cycleDeg)%cycleDeg;
+    if(is4){
+      // open 490→720→0→10
+      const c=((evC%cycleDeg)+cycleDeg)%cycleDeg;
+      return t>=evOTot || t<=c;
+    }
+    return t>=evO && t<=evC;
+  };
+
+  for(let i=0;i<cycleDeg;i++){
+    if(closed[i])continue;
+    const intk=intakeOpen(i), exh=exhaustOpen(i);
+    if(intk&&exh){ p[i]=(gas.pMan+gas.pExh)/2; T[i]=(gas.TMan+Texh)/2; }
+    else if(intk){ p[i]=gas.pMan; T[i]=gas.TMan; }
+    else if(exh){ p[i]=gas.pExh; T[i]=Texh; }
+    else { p[i]=gas.pMan; T[i]=gas.TMan; }
+  }
+  // close the array
+  p[cycleDeg]=p[0]; T[cycleDeg]=T[0]; xb[cycleDeg]=xb[0]; V[cycleDeg]=V[0];
+  hr[cycleDeg]=hr[0]; xPist[cycleDeg]=xPist[0];
+
+  // ---- net indicated work over the complete cycle (includes pumping loop) ----
+  let Wnet=0;
+  for(let i=0;i<cycleDeg;i++) Wnet+=0.5*(p[i]+p[i+1])*(V[i+1]-V[i]);
+
+  // ---- performance ----
+  const Vd=geom.Vd;
+  const cyclesPerSec=is4?rpm/120:rpm/60;
+  const nCyl=cfg.architecture.cylinders;
+  const pInd=Wnet*nCyl*cyclesPerSec;
+  const Up=geom.Up;
+  const fmepBar=0.4+0.005*(pMax/1e5)+0.009*Up+0.0009*Up*Up;
+  const fmep=fmepBar*1e5*cfg.operating.frictionScale;
+  const pFric=fmep*Vd*nCyl*cyclesPerSec;
+  const pBrake=pInd-pFric;
+  const torque=pBrake/omega;
+  const bmep=pBrake/(Vd*nCyl*cyclesPerSec);
+  const imepNet=Wnet/Vd;
+  const imepGross=Wclosed/Vd;
+  const mFuelDot=gas.mFuel*nCyl*cyclesPerSec;
+  const mAirDot=gas.mAir*nCyl*cyclesPerSec;
+  const qIn=mFuelDot*fuel.lhv;
+  const etaInd=qIn>0?pInd/qIn:0;
+  const etaBrake=qIn>0?pBrake/qIn:0;
+  const bsfc=pBrake>1?mFuelDot/pBrake*3.6e6:NaN;
+  const mechEff=pInd>0?pBrake/pInd:0;
+  const qHt=QhtTotal*nCyl*cyclesPerSec;
+  const mExhDot=(gas.mAir+gas.mFuel)*nCyl*cyclesPerSec;
+  const qExh=mExhDot*1150*(Texh-gas.TAmb);
+  const qBalance=qIn-pInd-qHt-qExh;
+  const waterRate=mFuelDot*(fuel.short==='H₂'?9.0:(fuel.short==='CH₄'?2.25:1.42));
+
+  // thermal network
+  const Tcool=cfg.operating.coolantTemp_C;
+  const oilEst=Tcool+8+30*clamp(pFric/(pFric+15000),0,1);
+  const pistonTemp=Tcool+30+Math.min(220,qFluxMax*0.008/150);
+  const headTemp=Tcool+25+Math.min(160,qFluxMax*0.006/170);
+  const thermalLoad=qFluxMax/2.0e6;
+
+  // pre-ignition / knock heuristic (H₂-specific, NOT a validated limit)
+  let knockIdx;
+  if(cfg.architecture.fuel==='H2'){
+    knockIdx=clamp(
+      0.30*clamp((gas.Tivc-320)/90,0,1)+
+      0.30*clamp((geom.CR-10)/6,0,1)+
+      0.18*clamp((cfg.combustion.wallTemp_C-150)/120,0,1)+
+      0.22*clamp((1.6-gas.lambda)/1.1,0,1),0,1);
+  }else{
+    knockIdx=clamp(
+      0.34*clamp((gas.Tivc-320)/90,0,1)+
+      0.34*clamp((geom.CR-9)/7,0,1)+
+      0.16*clamp((cfg.combustion.wallTemp_C-150)/120,0,1)+
+      0.16*clamp((1.3-gas.lambda)/0.8,0,1),0,1);
+  }
+
+  return {geom,gas,theta,V,p,T,xb,hr,xPist,cycleDeg,is4,rpm,
+    timing:{ivO,ivC,evO,evC,thetaSpark,dur},
+    Texh,pAtEvo,TAtEvo,
+    perf:{Wnet,Wclosed,pInd,pBrake,torque,bmep,imepNet,imepGross,pMax,TMax,
+      fmep,fmepBar,etaInd,etaBrake,mechEff,bsfc,qIn,qHt,qExh,qBalance,
+      mFuelDot,mAirDot,waterRate,oilEst,pistonTemp,headTemp,thermalLoad,
+      knockIdx,qFluxMax}
+  };
+}
+
+/* ============================ RPM SWEEP ============================ */
+function computeSweep(cfg){
+  const pts=[];
+  const base=cfg.operating.rpm;
+  const set=new Set();
+  for(let r=800;r<=7500;r+=400)set.add(r);
+  set.add(base);
+  Array.from(set).sort((a,b)=>a-b).forEach(r=>{
+    const c=deepClone(cfg); c.operating.rpm=r;
+    try{
+      const s=simulateCycle(c);
+      pts.push({rpm:r,torque:s.perf.torque,power:s.perf.pBrake/1000,
+        etaV:s.gas.etaV,etaB:s.perf.etaBrake,bmep:s.perf.bmep/1e5,
+        knock:s.perf.knockIdx});
+    }catch(e){/* skip non-converging point */}
+  });
+  return pts;
+}
+
+/* ============================ DIAGNOSTICS ============================ */
+function generateDiagnostics(cfg,geom,gas,cyc,perf){
+  const d=[];
+  const fuel=cfg.architecture.fuel;
+  const add=(sev,cat,title,detail,affected,first)=>
+    d.push({sev,cat,title,detail,affected,first});
+
+  // geometry consistency
+  if(geom.boreStroke>1.6)
+    add('med','Geometry','Bore/stroke ratio is very oversquare',
+      `Bore/stroke = ${fmt(geom.boreStroke,2)}. A very large bore with short stroke favours high RPM but increases the surface-to-volume ratio at TDC, raising heat loss and reducing thermal efficiency. It also enlarges the combustion chamber, which can slow flame development.`,
+      'Heat loss, thermal efficiency, combustion duration, packaging.',
+      'Try increasing stroke or reducing bore, then watch indicated efficiency and heat rejection.');
+  if(geom.boreStroke<0.7)
+    add('med','Geometry','Bore/stroke ratio is very undersquare',
+      `Bore/stroke = ${fmt(geom.boreStroke,2)}. A long stroke increases mean piston speed and friction, and can limit RPM. It improves surface-to-volume ratio for efficiency but raises mechanical losses.`,
+      'Mean piston speed, FMEP, RPM limit, knock tendency.',
+      'Check mean piston speed and FMEP as RPM rises.');
+
+  // compression ratio vs fuel
+  if(fuel==='H2'&&geom.CR>14)
+    add('high','Combustion','Compression ratio may be too high for hydrogen',
+      `CR = ${fmt(geom.CR,1)}:1. The estimated end-of-compression temperature is ${fmt(gas.Tivc*Math.pow(geom.CR,0.37),0)} K. Hydrogen has a very low minimum ignition energy and can pre-ignite from hot surfaces (spark plug, exhaust valve, deposits) before the spark. The heuristic risk index is ${fmt(perf.knockIdx*100,0)}%. This is not a validated knock limit.`,
+      'Pre-ignition/backfire risk, peak pressure, thermal loading, spark timing margin.',
+      'Reduce CR toward 10–12:1, cool the intake charge, retard spark, and improve cooling around the exhaust valve.');
+  if(fuel!=='H2'&&geom.CR>13)
+    add('med','Combustion','Compression ratio is high for the selected fuel',
+      `CR = ${fmt(geom.CR,1)}:1. High compression raises end-of-compression temperature (${fmt(gas.Tivc*Math.pow(geom.CR,0.37),0)} K) and knock tendency for ${FUELS[fuel].short}.`,
+      'Knock risk, spark advance requirement, peak pressure.','Consider reducing CR or retarding spark.');
+
+  // lambda / mixture
+  if(gas.lambda<1.0)
+    add('high','Fuel & air','Mixture is rich (λ < 1)',
+      `λ = ${fmt(gas.lambda,2)}. There is insufficient oxygen for complete oxidation of the fuel. Estimated combustion efficiency is ${fmt(combustionEfficiency(gas.lambda)*100,0)}%; unburned fuel leaves in the exhaust. For hydrogen this creates a flammable exhaust stream and is a safety and emissions concern.`,
+      'Combustion efficiency, exhaust composition, exhaust temperature, fuel consumption.',
+      'Raise λ toward at least 1.0 (lean for H₂ is normal), or reduce fuel flow.');
+  if(gas.lambda>4.5)
+    add('med','Fuel & air','Mixture is extremely lean (λ > 4.5)',
+      `λ = ${fmt(gas.lambda,2)}. Hydrogen has a wide lean limit, but very lean mixtures slow flame propagation, increase cycle-to-cycle variability, and reduce indicated work per cycle. The model applies a reduced combustion efficiency of ${fmt(combustionEfficiency(gas.lambda)*100,0)}%.`,
+      'Combustion stability, IMEP, BSFC, exhaust temperature.',
+      'Reduce λ toward 2–3 for a practical lean-burn H₂ calibration.');
+
+  // intake temperature
+  const TmanC=gas.TMan-273.15;
+  if(TmanC>55)
+    add('med','Air management','Intake charge temperature is high',
+      `Manifold charge temperature is ${fmt(TmanC,0)} °C. Air density is ${fmt((1-gas.rhoMan/(gas.pMan/(287*298)))*100,1)}% lower than at 25 °C, reducing trapped oxygen for a given manifold pressure. High charge temperature also increases pre-ignition risk.`,
+      'Trapped air mass, volumetric efficiency, knock risk, peak power.',
+      'Add intercooling or cool the intake path; verify boost/intercooler assumptions.');
+
+  // volumetric efficiency
+  if(gas.etaV<0.65)
+    add('high','Air management','Low volumetric efficiency',
+      `Estimated ηv = ${fmt(gas.etaV*100,1)}%. Intake valve gas velocity is ${fmt(gas.vIdeal,0)} m/s, producing an estimated valve pressure loss of ${fmt(gas.dpValve/1000,1)} kPa. A small intake valve area relative to piston area, or high piston speed, restricts breathing.`,
+      'Trapped air mass, maximum power, fuel flow at a given λ.',
+      'Increase intake valve diameter or valve count, reduce RPM, or reduce intake restrictions.');
+
+  // piston speed
+  if(geom.Up>25)
+    add('med','Mechanical','Mean piston speed is high',
+      `Mean piston speed = ${fmt(geom.Up,1)} m/s. Production engines typically stay below ~20–25 m/s. High piston speed raises ring friction, connecting-rod inertia loads and valve-train stress, and is reflected in the Chen–Flynn FMEP term.`,
+      'FMEP, mechanical efficiency, maximum RPM.',
+      'Reduce RPM or stroke, or accept higher friction and verify component loads.');
+
+  // peak pressure
+  if(perf.pMax>150e5)
+    add('high','Mechanical','Peak cylinder pressure is very high',
+      `Peak pressure ≈ ${fmt(perf.pMax/1e5,0)} bar. High peak pressure loads the piston, rings, head gasket and bearings. For a spark-ignition engine, check compression ratio, boost and spark timing.`,
+      'Structural loading, head gasket, bearing loads, knock risk.',
+      'Reduce CR, boost or spark advance; verify structural design.');
+
+  // peak temperature
+  if(perf.TMax>2800)
+    add('med','Thermal','Peak cycle temperature is very high',
+      `Peak temperature ≈ ${fmt(perf.TMax,0)} K. This increases NOx formation (if lean-burn conditions are not sufficiently lean), thermal loading of the piston and valves, and heat rejection to the coolant. The single-zone model does not resolve dissociation chemistry.`,
+      'Thermal loading, NOx (qualitative), coolant heat rejection.',
+      'Enlean the mixture (higher λ) or reduce load/CR.');
+
+  // backpressure
+  if(cfg.operating.exhaustBackpressure_kPa>20)
+    add('med','Air management','Exhaust backpressure is high',
+      `Backpressure = ${fmt(cfg.operating.exhaustBackpressure_kPa,1)} kPa. This increases pumping work, raises residual gas fraction, and reduces volumetric efficiency.`,
+      'Pumping loss, ηv, exhaust temperature, turbo matching (if boosted).',
+      'Reduce restriction downstream of the exhaust valve.');
+
+  // friction fraction
+  if(perf.pInd>0&&perf.fmep*geom.Vd*cfg.architecture.cylinders*(cyc.is4?cyc.rpm/120:cyc.rpm/60)/Math.max(perf.pInd,1)>0.35)
+    add('med','Mechanical','Friction is a large fraction of indicated power',
+      `FMEP = ${fmt(perf.fmepBar,2)} bar and friction consumes ≈${fmt(100*(1-perf.mechEff),0)}% of indicated power. Mechanical efficiency is ${fmt(perf.mechEff*100,1)}%.`,
+      'Brake power, BSFC, heat rejection to oil/coolant.',
+      'Reduce RPM or piston speed; check friction scale assumptions.');
+
+  // net brake power
+  if(perf.pBrake<=0)
+    add('high','Mechanical','No net brake power at this operating point',
+      `Indicated power ${fmt(perf.pInd/1000,2)} kW is less than friction power. The engine cannot sustain this operating point without external drive. Check load, RPM, λ and friction assumptions.`,
+      'Torque, brake power, BSFC (undefined).',
+      'Increase load (throttle), λ or RPM; or reduce friction assumptions.');
+
+  // knock heuristic
+  if(perf.knockIdx>0.68)
+    add('high','Abnormal combustion','Pre-ignition / abnormal combustion risk is high (heuristic)',
+      `Heuristic risk index = ${fmt(perf.knockIdx*100,0)}%. Contributing factors: end-of-compression temperature ${fmt(gas.Tivc*Math.pow(geom.CR,0.37),0)} K, CR ${fmt(geom.CR,1)}, wall temperature ${fmt(cfg.combustion.wallTemp_C,0)} °C, λ ${fmt(gas.lambda,2)}. For hydrogen, hot-spot pre-ignition and backfire are of particular concern. This indicator is not a validated knock limit.`,
+      'Spark timing margin, peak pressure, component durability.',
+      'Reduce CR, cool the charge, retard spark, enlean, and verify hot-spot temperatures.');
+
+  // numerical
+  if(!isFinite(perf.pBrake)||!isFinite(perf.TMax))
+    add('high','Numerical','Non-physical result detected',
+      `One or more outputs are NaN or infinite. Check for zero/negative volumes, ratios or mass flows. The simulation has been clamped to prevent divergence.`,
+      'All dependent outputs.','Reset geometry and operating parameters to the documented baseline.');
+
+  // 2-stroke caveat
+  if(cfg.architecture.strokeType===2)
+    add('low','Model limitation','2-stroke mode is simplified',
+      `The 2-stroke cycle uses a simplified port-timing and scavenging representation. Scavenging efficiency, short-circuiting and crankcase pumping are not resolved. Treat 2-stroke results as indicative only.`,
+      'Trapped mass, ηv, exhaust temperature, all performance outputs.',
+      'Use 4-stroke mode for quantitative comparisons; use 2-stroke mode for qualitative exploration only.');
+
+  // all-clear
+  if(d.length===0)
+    add('ok','System','No major issues detected by the built-in checks',
+      `The current design is within the model's heuristic operating ranges. Remember that a clean diagnostic list does not prove a real engine is safe, efficient or durable.`,
+      '—','Proceed to comparison mode and explore trade-offs.');
+  return d;
+}
+
+/* ============================ CHART ENGINE ============================ */
+function setupCanvas(cv){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const rect=cv.getBoundingClientRect();
+  const w=Math.max(120,rect.width||cv.clientWidth||300);
+  const h=Math.max(80,rect.height||cv.clientHeight||180);
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+  }
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx,w,h};
+}
+function drawChart(cv,opts){
+  if(!cv)return;
+  const {ctx,w,h}=setupCanvas(cv);
+  ctx.clearRect(0,0,w,h);
+  const pad={l:46,r:12,t:10,b:28};
+  const pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  let {xMin,xMax,yMin,yMax}=opts;
+  if(!isFinite(xMin)||!isFinite(xMax)||xMax<=xMin){xMin=0;xMax=1;}
+  if(!isFinite(yMin)||!isFinite(yMax)||yMax<=yMin){yMin=0;yMax=1;}
+  const X=v=>pad.l+(v-xMin)/(xMax-xMin)*pw;
+  const Y=v=>pad.t+ph-(v-yMin)/(yMax-yMin)*ph;
+
+  // grid + axes
+  ctx.strokeStyle='#eef1f6'; ctx.lineWidth=1;
+  const xt=niceTicks(xMin,xMax,5), yt=niceTicks(yMin,yMax,4);
+  ctx.font='10px ui-sans-serif,system-ui,sans-serif'; ctx.fillStyle='#8a97ab';
+  yt.forEach(v=>{
+    const y=Y(v); if(y<pad.t-1||y>pad.t+ph+1)return;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(opts.yFmt?opts.yFmt(v):String(+v.toFixed(2)),pad.l-5,y);
+  });
+  xt.forEach(v=>{
+    const x=X(v); if(x<pad.l-1||x>pad.l+pw+1)return;
+    ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke();
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(opts.xFmt?opts.xFmt(v):String(+v.toFixed(2)),x,pad.t+ph+5);
+  });
+  // zero line
+  if(yMin<0&&yMax>0){
+    ctx.strokeStyle='#c9d4e6'; ctx.beginPath();
+    ctx.moveTo(pad.l,Y(0)); ctx.lineTo(pad.l+pw,Y(0)); ctx.stroke();
+  }
+  // frame
+  ctx.strokeStyle='#dbe2ec'; ctx.strokeRect(pad.l,pad.t,pw,ph);
+
+  // series
+  (opts.series||[]).forEach(s=>{
+    if(!s.data||s.data.length<2)return;
+    ctx.strokeStyle=s.color||'#1d4ed8'; ctx.lineWidth=s.width||1.6;
+    if(s.dash)ctx.setLineDash(s.dash); else ctx.setLineDash([]);
+    ctx.beginPath();
+    s.data.forEach((pt,i)=>{
+      const x=X(pt[0]), y=Y(pt[1]);
+      if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke(); ctx.setLineDash([]);
+    if(s.fill&&s.data.length>2){
+      ctx.fillStyle=s.fill; ctx.lineTo(X(s.data[s.data.length-1][0]),Y(Math.max(yMin,0)));
+      ctx.lineTo(X(s.data[0][0]),Y(Math.max(yMin,0))); ctx.closePath(); ctx.fill();
+    }
+  });
+  // markers
+  (opts.markers||[]).forEach(m=>{
+    if(!m)return;
+    const x=X(m.x), y=Y(m.y);
+    if(x<pad.l||x>pad.l+pw||y<pad.t||y>pad.t+ph)return;
+    ctx.fillStyle=m.color||'#b91c1c';
+    ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+  // labels
+  ctx.fillStyle='#78869b'; ctx.font='10px ui-sans-serif,system-ui,sans-serif';
+  if(opts.xLabel){ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(opts.xLabel,pad.l+pw/2,h-1);}
+  if(opts.yLabel){
+    ctx.save(); ctx.translate(10,pad.t+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(opts.yLabel,0,0); ctx.restore();
+  }
+}
+
+/* ============================ ENGINE ANIMATION ============================ */
+function valveLiftFrac(theta,open,close,maxLift,cycleDeg){
+  let t=theta;
+  if(close>open){
+    if(t<open||t>close)return 0;
+    const f=(t-open)/(close-open);
+    return maxLift*Math.sin(Math.PI*f);
+  }
+  // wrapped window
+  if(t<open&&t>close)return 0;
+  if(t<open)t+=cycleDeg;
+  const f=(t-open)/(cycleDeg-open+close);
+  return maxLift*Math.sin(Math.PI*f);
+}
+function drawEngine(){
+  const cv=document.getElementById('engineCanvas');
+  if(!cv||!STATE.cycle)return;
+  const {ctx,w,h}=setupCanvas(cv);
+  ctx.clearRect(0,0,w,h);
+  const cfg=STATE.cfg, geom=STATE.geom, cyc=STATE.cycle;
+  const cycleDeg=cyc.cycleDeg;
+  const theta=((ANIM.theta%cycleDeg)+cycleDeg)%cycleDeg;
+  const idx=Math.min(cycleDeg,Math.round(theta));
+  const t=cyc.timing;
+
+  const B=geom.B, L=geom.L, r=geom.r, S=geom.S;
+  const cx=w/2, crankY=h-58;
+  let scale=(crankY-42)/Math.max(0.05,L+r);
+  const maxBore=w-76;
+  if(B*scale>maxBore)scale=maxBore/B;
+  const Bpx=B*scale, rpx=r*scale, Lpx=L*scale;
+
+  const thRad=theta*Math.PI/180;
+  const pinX=cx+rpx*Math.sin(thRad);
+  const pinY=crankY-rpx*Math.cos(thRad);
+  const yPin=crankY-scale*(r*Math.cos(thRad)+Math.sqrt(Math.max(1e-9,L*L-r*r*Math.sin(thRad)*Math.sin(thRad))));
+  const crownY=yPin-8;
+  const headY=10;
+  const cylTop=32;
+  const cylBot=crankY-14;
+
+  const intakeLift=valveLiftFrac(theta,((t.ivO%cycleDeg)+cycleDeg)%cycleDeg,((t.ivC%cycleDeg)+cycleDeg)%cycleDeg,cfg.geometry.valveLift_mm,cycleDeg);
+  const exhaustLift=valveLiftFrac(theta,((t.evO%cycleDeg)+cycleDeg)%cycleDeg,((t.evC%cycleDeg)+cycleDeg)%cycleDeg,cfg.geometry.valveLift_mm,cycleDeg);
+  const liftPx=scale*0.00055; // exaggerated visual scale
+
+  // stroke label
+  let strokeName='—';
+  if(cyc.is4){
+    if(theta<180)strokeName='Intake';
+    else if(theta<360)strokeName='Compression';
+    else if(theta<540)strokeName='Power';
+    else strokeName='Exhaust';
+  }else{
+    strokeName=(theta<100||theta>260)?'Compression/Power':'Scavenging';
+  }
+  const sc=document.getElementById('strokeChip');
+  if(sc)sc.textContent=strokeName;
+  const tl=document.getElementById('thetaLabel');
+  if(tl)tl.textContent=fmt(theta,0)+'°';
+
+  // -------- cylinder block --------
+  ctx.fillStyle='#f8fafd';
+  ctx.strokeStyle='#cfd8e6'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.rect(cx-Bpx/2-4,headY,Bpx+8,cylBot-headY+12); ctx.fill(); ctx.stroke();
+
+  // -------- gas region --------
+  const burn=clamp(cyc.xb[idx]||0,0,1);
+  const tempK=cyc.T[idx]||300;
+  const hot=clamp((tempK-350)/2400,0,1);
+  const gr=Math.round(lerp(180,255,hot)), gg=Math.round(lerp(205,132,hot)), gb=Math.round(lerp(235,52,hot));
+  const alpha=0.22+0.55*burn;
+  ctx.fillStyle=`rgba(${gr},${gg},${gb},${alpha})`;
+  const gasTop=cylTop, gasBot=Math.max(cylTop+1,crownY);
+  ctx.fillRect(cx-Bpx/2+1,gasTop,Bpx-2,gasBot-gasTop);
+
+  // flame kernel
+  if(burn>0.01){
+    const flameR=Bpx*0.5*Math.min(1,burn*1.6);
+    const fx=cx, fy=gasTop+6;
+    const g=ctx.createRadialGradient(fx,fy,1,fx,fy,Math.max(2,flameR));
+    g.addColorStop(0,'rgba(255,240,180,0.95)');
+    g.addColorStop(0.45,'rgba(255,150,40,0.55)');
+    g.addColorStop(1,'rgba(255,90,20,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(fx,fy,Math.max(2,flameR),0,Math.PI*2); ctx.fill();
+  }
+
+  // -------- piston --------
+  ctx.fillStyle='#d7dfeb';
+  ctx.strokeStyle='#9aa8bd'; ctx.lineWidth=1.5;
+  const pw=Bpx-2;
+  ctx.beginPath(); ctx.rect(cx-pw/2,crownY,pw,26); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#7c8ba3'; ctx.lineWidth=1;
+  for(let i=0;i<3;i++){
+    ctx.beginPath(); ctx.moveTo(cx-pw/2+3,crownY+4+i*3); ctx.lineTo(cx+pw/2-3,crownY+4+i*3); ctx.stroke();
+  }
+  // piston pin
+  ctx.fillStyle='#6b7a92';
+  ctx.beginPath(); ctx.arc(cx,crownY+13,3,0,Math.PI*2); ctx.fill();
+
+  // -------- connecting rod --------
+  ctx.strokeStyle='#8c9ab0'; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(pinX,pinY); ctx.lineTo(cx,crownY+13); ctx.stroke();
+  ctx.strokeStyle='#b5c1d3'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(pinX,pinY); ctx.lineTo(cx,crownY+13); ctx.stroke();
+
+  // -------- crankshaft --------
+  ctx.strokeStyle='#c7d2e2'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.arc(cx,crankY,rpx,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#7c8ba3'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(cx,crankY); ctx.lineTo(pinX,pinY); ctx.stroke();
+  ctx.fillStyle='#5a6980';
+  ctx.beginPath(); ctx.arc(cx,crankY,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,crankY,2.5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#5a6980'; ctx.beginPath(); ctx.arc(pinX,pinY,5,0,Math.PI*2); ctx.fill();
+
+  // -------- cylinder head + valves --------
+  ctx.fillStyle='#e6ecf5'; ctx.strokeStyle='#b6c2d6'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.rect(cx-Bpx/2-4,headY-2,Bpx+8,14); ctx.fill(); ctx.stroke();
+
+  const drawValve=(vx,stemDir,lift,color)=>{
+    const seatY=cylTop;
+    const ly=seatY+lift*liftPx;
+    ctx.strokeStyle=color; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(vx,ly-3); ctx.lineTo(vx+stemDir*10,headY-6); ctx.stroke();
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(vx-7,ly-3); ctx.lineTo(vx+7,ly-3); ctx.lineTo(vx+4,ly+2); ctx.lineTo(vx-4,ly+2);
+    ctx.closePath(); ctx.fill();
+  };
+  drawValve(cx-Bpx*0.27,-1,intakeLift,'#2563eb');
+  drawValve(cx+Bpx*0.27,1,exhaustLift,'#b91c1c');
+
+  // spark plug
+  const sx=cx, sy=headY-4;
+  ctx.strokeStyle='#374151'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx,sy+9); ctx.stroke();
+  const sparkAngle=((t.thetaSpark%cycleDeg)+cycleDeg)%cycleDeg;
+  let dth=Math.abs(theta-sparkAngle); dth=Math.min(dth,cycleDeg-dth);
+  if(dth<6){
+    ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.8;
+    ctx.beginPath();
+    ctx.moveTo(sx,sy+9); ctx.lineTo(sx-3,sy+13); ctx.lineTo(sx+1,sy+13); ctx.lineTo(sx-2,sy+17);
+    ctx.stroke();
+  }
+
+  // -------- flow indicators --------
+  const drawFlow=(x,y,dir,color,open)=>{
+    if(!open)return;
+    const a=0.35+0.3*Math.abs(Math.sin(theta*Math.PI/30));
+    ctx.strokeStyle=color; ctx.globalAlpha=a; ctx.lineWidth=2;
+    for(let i=0;i<3;i++){
+      const yy=y+i*7*dir;
+      ctx.beginPath();
+      ctx.moveTo(x-6,yy); ctx.lineTo(x,yy+4*dir); ctx.lineTo(x+6,yy);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  };
+  const intakeOpen=intakeLift>0.05, exhaustOpen=exhaustLift>0.05;
+  drawFlow(cx-Bpx*0.27,headY-14,-1,'#2563eb',intakeOpen);
+  drawFlow(cx+Bpx*0.27,headY-14,1,'#b91c1c',exhaustOpen);
+
+  // crank angle arc
+  ctx.strokeStyle='#dbe2ec'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(cx,crankY,rpx*0.55,-Math.PI/2,Math.PI*1.5); ctx.stroke();
+  ctx.strokeStyle='#1d4ed8'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(cx,crankY,rpx*0.55,-Math.PI/2,-Math.PI/2+thRad); ctx.stroke();
+
+  // labels
+  ctx.fillStyle='#78869b'; ctx.font='10px ui-sans-serif,system-ui,sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('IN',6,headY);
+  ctx.textAlign='right'; ctx.fillText('EX',w-6,headY);
+  ctx.textAlign='left';
+  ctx.fillText(`${fmt(cyc.p[idx]/1e5,1)} bar`,8,cylBot-16);
+  ctx.fillText(`${fmt(cyc.T[idx],0)} K`,8,cylBot-4);
+}
+
+/* ============================ TELEMETRY ============================ */
+function telemetryHTML(cyc){
+  const g=cyc.gas, pf=cyc.perf, geom=cyc.geom;
+  const tile=(l,v,u)=>`<div class="tile"><div class="l">${l}</div><div class="v">${v}<u>${u||''}</u></div></div>`;
+  return [
+    tile('Power',fmt(pf.pBrake/1000,2),'kW'),
+    tile('Torque',fmt(pf.torque,1),'N·m'),
+    tile('BMEP',fmt(pf.bmep/1e5,2),'bar'),
+    tile('IMEP',fmt(pf.imepNet/1e5,2),'bar'),
+    tile('η brake',fmt(pf.etaBrake*100,1),'%'),
+    tile('η indicated',fmt(pf.etaInd*100,1),'%'),
+    tile('Peak pressure',fmt(pf.pMax/1e5,1),'bar'),
+    tile('Peak temp',fmt(pf.TMax,0),'K'),
+    tile('Exhaust',fmt(cyc.Texh-273.15,0),'°C'),
+    tile('λ',fmt(g.lambda,2),''),
+    tile('ηv',fmt(g.etaV*100,1),'%'),
+    tile('H₂ flow',fmt(pf.mFuelDot*1000,2),'g/s'),
+    tile('Air flow',fmt(pf.mAirDot*1000,1),'g/s'),
+    tile('BSFC',fmt(pf.bsfc,0),'g/kWh'),
+    tile('FMEP',fmt(pf.fmepBar,2),'bar'),
+    tile('Coolant heat',fmt(pf.qHt/1000,1),'kW'),
+  ].join('');
+}
+
+/* ============================ CONTROL BUILDERS ============================ */
+function sliderHTML(spec){
+  const v=getPath(STATE.cfg,spec.path);
+  const id='o_'+spec.path.replace(/\./g,'_');
+  const dec=spec.dec??1;
+  return `<div class="ctrl">
+    <div class="ctrl-head"><label ${spec.learn?`data-learn="${spec.learn}" class="learnable"`:''}>${spec.label}</label>
+      <span class="val"><b id="${id}">${fmt(v,dec)}</b> ${spec.unit||''}</span></div>
+    <input type="range" data-path="${spec.path}" data-outid="${id}" data-dec="${dec}"
+      min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${v}">
+    ${spec.help?`<div class="help">${spec.help}</div>`:''}
+  </div>`;
+}
+function selectHTML(spec){
+  const v=getPath(STATE.cfg,spec.path);
+  return `<div class="ctrl">
+    <div class="ctrl-head"><label ${spec.learn?`data-learn="${spec.learn}" class="learnable"`:''}>${spec.label}</label></div>
+    <select data-path="${spec.path}">
+      ${spec.options.map(o=>`<option value="${o.v}" ${String(v)===String(o.v)?'selected':''}>${o.t}</option>`).join('')}
+    </select>
+    ${spec.help?`<div class="help">${spec.help}</div>`:''}
+  </div>`;
+}
+function outHTML(label,key,unit=''){
+  return `<div class="row"><span class="k">${label}</span><span class="v"><span data-out="${key}">—</span> <u>${unit}</u></span></div>`;
+}
+
+/* ============================ OUTPUT REGISTRY ============================ */
+const OUT={};
+function registerOutputs(){
+  const g=()=>STATE.geom, s=()=>STATE.gas, p=()=>STATE.perf, c=()=>STATE.cycle;
+  OUT.disp_cc=()=>fmt(g()?g().VdTotal*1e6:NaN,0);
+  OUT.disp_l=()=>fmt(g()?g().VdTotal*1000:NaN,2);
+  OUT.vd_cyl=()=>fmt(g()?g().Vd*1e6:NaN,1);
+  OUT.vc=()=>fmt(g()?g().Vc*1e6:NaN,2);
+  OUT.crank_r=()=>fmt(g()?g().r*1000:NaN,1);
+  OUT.bs_ratio=()=>fmt(g()?g().boreStroke:NaN,2);
+  OUT.rod_ratio=()=>fmt(g()?g().rodRatio:NaN,2);
+  OUT.up=()=>fmt(g()?g().Up:NaN,2);
+  OUT.cycle_ms=()=>fmt(c()?c().cycleTime*1000:NaN,1);
+  OUT.p_man=()=>fmt(s()?s().pMan/1000:NaN,1);
+  OUT.p_eff=()=>fmt(s()?s().pEff/1000:NaN,1);
+  OUT.rho=()=>fmt(s()?s().rhoMan:NaN,3);
+  OUT.dp_valve=()=>fmt(s()?s().dpValve/1000:NaN,2);
+  OUT.v_valve=()=>fmt(s()?s().vIdeal:NaN,0);
+  OUT.afr=()=>fmt(g()?FUELS[STATE.cfg.architecture.fuel].afrStoich:NaN,1);
+  OUT.lambda=()=>fmt(s()?s().lambda:NaN,2);
+  OUT.phi=()=>fmt(s()?s().phi:NaN,3);
+  OUT.m_air=()=>fmt(p()?p().mAirDot*1000:NaN,2);
+  OUT.m_fuel=()=>fmt(p()?p().mFuelDot*1000:NaN,3);
+  OUT.q_in=()=>fmt(p()?p().qIn/1000:NaN,1);
+  OUT.water=()=>fmt(p()?p().waterRate*1000:NaN,2);
+  OUT.eta_v=()=>fmt(s()?s().etaV*100:NaN,1);
+  OUT.peak_p=()=>fmt(p()?p().pMax/1e5:NaN,1);
+  OUT.peak_t=()=>fmt(p()?p().TMax:NaN,0);
+  OUT.exh_t=()=>fmt(c()?(c().Texh-273.15):NaN,0);
+  OUT.q_ht=()=>fmt(p()?p().qHt/1000:NaN,1);
+  OUT.q_exh=()=>fmt(p()?p().qExh/1000:NaN,1);
+  OUT.q_bal=()=>fmt(p()?p().qBalance/1000:NaN,1);
+  OUT.knock=()=>fmt(p()?p().knockIdx*100:NaN,0);
+  OUT.oil_t=()=>fmt(p()?p().oilEst:NaN,0);
+  OUT.piston_t=()=>fmt(p()?p().pistonTemp:NaN,0);
+  OUT.head_t=()=>fmt(p()?p().headTemp:NaN,0);
+  OUT.thermal_load=()=>fmt(p()?p().thermalLoad:NaN,2);
+  OUT.q_flux=()=>fmt(p()?p().qFluxMax/1e4:NaN,1);
+  OUT.eta_b=()=>fmt(p()?p().etaBrake*100:NaN,1);
+  OUT.eta_i=()=>fmt(p()?p().etaInd*100:NaN,1);
+  OUT.mech=()=>fmt(p()?p().mechEff*100:NaN,1);
+  OUT.bsfc=()=>fmt(p()?p().bsfc:NaN,0);
+  OUT.torque=()=>fmt(p()?p().torque:NaN,1);
+  OUT.power=()=>fmt(p()?p().pBrake/1000:NaN,2);
+}
+function updateOutputs(){
+  document.querySelectorAll('[data-out]').forEach(el=>{
+    const fn=OUT[el.dataset.out];
+    if(fn){try{el.textContent=fn();}catch(e){el.textContent='—';}}
+  });
+}
+
+/* ============================ TAB RENDERERS ============================ */
+function renderActiveTab(){
+  const el=document.getElementById('main');
+  if(!el)return;
+  const tab=STATE.activeTab;
+  el.innerHTML='';
+  const sec=document.createElement('section');
+  sec.innerHTML=(TAB_RENDERERS[tab]||TAB_RENDERERS.overview)();
+  el.appendChild(sec);
+  bindControls(el);
+  bindLearnables(el);
+  updateOutputs();
+  // draw tab-local charts
+  requestAnimationFrame(()=>drawTabCharts(tab));
+}
+
+const TAB_RENDERERS={};
+
+/* ---------- OVERVIEW ---------- */
+TAB_RENDERERS.overview=()=>{
+  const c=STATE.cfg, g=STATE.geom, pf=STATE.perf, gas=STATE.gas;
+  return `
+  <div class="disclaimer">
+    <b>Educational model.</b> This simulator uses a single-zone first-law cycle with a Wiebe heat-release
+    approximation, a valve-flow gas-exchange estimate and the Chen–Flynn friction correlation. It does
+    <b>not</b> resolve three-dimensional flow, detailed chemical kinetics, dissociation, or cycle-to-cycle
+    variation. Outputs are engineering estimates for learning — not validated engine data, and not a
+    basis for building or operating a real hydrogen fuel system.
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Design summary</h2><span class="mini">${c.name}</span></div>
+    <div class="two-col">
+      <div class="rows">
+        ${outHTML('Configuration', 'none', '')}
+        <div class="row"><span class="k">Engine type</span><span class="v">${c.architecture.strokeType}-stroke · ${c.architecture.cylinders} cyl · ${c.architecture.aspiration.toUpperCase()}</span></div>
+        <div class="row"><span class="k">Bore × stroke</span><span class="v">${fmt(g.B*1000,1)} × ${fmt(g.S*1000,1)} mm</span></div>
+        <div class="row"><span class="k">Total displacement</span><span class="v"><span data-out="disp_cc">—</span> <u>cc</u></span></div>
+        <div class="row"><span class="k">Compression ratio</span><span class="v">${fmt(g.CR,1)} : 1</span></div>
+        <div class="row"><span class="k">Connecting rod</span><span class="v">${fmt(c.geometry.rodLength_mm,0)} mm</span></div>
+        <div class="row"><span class="k">Fuel</span><span class="v">${FUELS[c.architecture.fuel].name}</span></div>
+        ${outHTML('Air–fuel ratio (stoich)','afr','kg/kg')}
+      </div>
+      <div class="rows">
+        <div class="row"><span class="k">Operating point</span><span class="v">${fmt(c.operating.rpm,0)} rpm · ${fmt(c.operating.throttle,0)}% load</span></div>
+        ${outHTML('λ (relative AFR)','lambda','')}
+        ${outHTML('Peak cylinder pressure','peak_p','bar')}
+        ${outHTML('Peak cylinder temperature','peak_t','K')}
+        ${outHTML('Brake power','power','kW')}
+        ${outHTML('Brake torque','torque','N·m')}
+        ${outHTML('Brake thermal efficiency','eta_b','%')}
+        ${outHTML('Volumetric efficiency','eta_v','%')}
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head"><h3>Pressure–volume loop</h3><span class="mini">estimate</span></div>
+      <div class="chart-wrap"><canvas id="ovPV"></canvas></div>
+      <div class="legend"><span><i style="background:#1d4ed8"></i>Cycle</span><span><i style="background:#b91c1c"></i>Current crank angle</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Cylinder pressure vs crank angle</h3><span class="mini">estimate</span></div>
+      <div class="chart-wrap"><canvas id="ovPth"></canvas></div>
+      <div class="legend"><span><i style="background:#1d4ed8"></i>Pressure</span><span><i style="background:#f59e0b"></i>Spark</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Energy balance at the current operating point</h2><span class="mini">per second</span></div>
+    <div class="grid3">
+      ${outHTML('Fuel chemical energy input','q_in','kW')}
+      ${outHTML('Indicated power','none','')}
+      <div class="row"><span class="k">Indicated power</span><span class="v">${fmt(pf.pInd/1000,2)} <u>kW</u></span></div>
+      ${outHTML('Heat to coolant (est.)','q_ht','kW')}
+      ${outHTML('Exhaust enthalpy (est.)','q_exh','kW')}
+      ${outHTML('Unaccounted','q_bal','kW')}
+    </div>
+    <div class="mini mt8">Unaccounted = Q<sub>in</sub> − P<sub>ind</sub> − Q<sub>coolant</sub> − Q<sub>exhaust</sub>. It includes model simplifications, dissociation and the fact that the single-zone heat-transfer and exhaust-enthalpy estimates are not exact.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Model hierarchy used in this simulator</h2></div>
+    <div class="rows">
+      <div class="row"><span class="k">L1 · Kinematics</span><span class="v">Slider-crank position, velocity, rod angularity (exact)</span></div>
+      <div class="row"><span class="k">L2 · Thermodynamics</span><span class="v">Single-zone first law, temperature-dependent c<sub>v</sub>, sealed period</span></div>
+      <div class="row"><span class="k">L3 · Gas exchange</span><span class="v">Valve flow-loss estimate, residual fraction, volumetric efficiency</span></div>
+      <div class="row"><span class="k">L4 · Combustion</span><span class="v">Wiebe burned-fraction heat release (documented approximation)</span></div>
+      <div class="row"><span class="k">L5 · Mechanical</span><span class="v">Chen–Flynn FMEP correlation, mechanical efficiency</span></div>
+      <div class="row"><span class="k">L6 · Thermal</span><span class="v">Woschni heat-transfer correlation, simplified thermal network</span></div>
+    </div>
+  </div>`;
+};
+
+/* ---------- ARCHITECTURE ---------- */
+TAB_RENDERERS.architecture=()=>{
+  const c=STATE.cfg;
+  return `
+  <div class="panel">
+    <div class="panel-head"><h2>Engine architecture</h2><span class="mini">incompatible combinations are flagged</span></div>
+    <div class="grid2">
+      ${selectHTML({path:'architecture.strokeType',label:'Engine type',learn:'strokeType',
+        options:[{v:4,t:'4-stroke (spark ignition)'},{v:2,t:'2-stroke (simplified model)'}],
+        help:'4-stroke is the fully resolved model. 2-stroke uses a simplified port-timing / scavenging representation.'})}
+      ${selectHTML({path:'architecture.cylinders',label:'Cylinder count',learn:'cylinders',
+        options:[1,2,3,4,6,8].map(n=>({v:n,t:n+' cylinder'+(n>1?'s':'')}))})}
+      ${selectHTML({path:'architecture.layout',label:'Layout',learn:'layout',
+        options:[{v:'inline',t:'Inline'},{v:'vee',t:'Vee (informational)'},{v:'flat',t:'Flat (informational)'}]})}
+      ${selectHTML({path:'architecture.aspiration',label:'Aspiration',learn:'aspiration',
+        options:[{v:'na',t:'Naturally aspirated'},{v:'turbo',t:'Turbocharged'},{v:'super',t:'Supercharged'}]})}
+      ${selectHTML({path:'architecture.valvesPerCyl',label:'Valves per cylinder',learn:'valves',
+        options:[{v:2,t:'2 valves'},{v:4,t:'4 valves'}]})}
+      ${selectHTML({path:'architecture.valveArrangement',label:'Valve arrangement',learn:'valveArr',
+        options:[{v:'OHV',t:'OHV (pushrod)'},{v:'SOHC',t:'SOHC'},{v:'DOHC',t:'DOHC'}]})}
+      ${selectHTML({path:'architecture.pistonCrown',label:'Piston crown (schematic)',learn:'crown',
+        options:[{v:'flat',t:'Flat'},{v:'dished',t:'Dished'},{v:'domed',t:'Domed'}]})}
+      ${selectHTML({path:'architecture.fuel',label:'Primary fuel',learn:'fuel',
+        options:Object.keys(FUELS).map(k=>({v:k,t:FUELS[k].name}))})}
+    </div>
+    <div class="help mt8">Changing the fuel switches the stoichiometric ratio, heating value and combustion
+    assumptions. Diesel is not offered as an interchangeable option because it requires a separate
+    compression-ignition model.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Firing order</h3><span class="mini">informational</span></div>
+    <div class="grid2">
+      <div class="ctrl"><div class="ctrl-head"><label>Firing order (text)</label></div>
+        <input type="text" data-path="architecture.firingOrder" value="${c.architecture.firingOrder}">
+      </div>
+      <div class="rows">
+        <div class="row"><span class="k">Crankshaft configuration</span><span class="v">${c.architecture.cylinders>=4?'Flat-plane (typical)':'Single-throw'}</span></div>
+        <div class="row"><span class="k">Crank radius</span><span class="v">stroke / 2 = <span data-out="crank_r">—</span> <u>mm</u></span></div>
+        <div class="row"><span class="k">Rod length</span><span class="v">${fmt(c.geometry.rodLength_mm,0)} <u>mm</u></span></div>
+      </div>
+    </div>
+    <div class="help mt8">The firing order text is stored with the design but does not affect the single-cylinder
+    thermodynamic model. Cylinder count does affect total displacement, total airflow and total power.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Compatibility checks</h3></div>
+    <div id="archChecks" class="rows"></div>
+  </div>`;
+};
+
+/* ---------- GEOMETRY ---------- */
+TAB_RENDERERS.geometry=()=>`
+  <div class="panel">
+    <div class="panel-head"><h2>Geometry &amp; sizing</h2><span class="mini">inputs are blue-accented sliders</span></div>
+    <div class="grid2">
+      ${sliderHTML({path:'geometry.bore_mm',label:'Bore diameter',min:50,max:130,step:0.5,unit:'mm',dec:1,learn:'bore'})}
+      ${sliderHTML({path:'geometry.stroke_mm',label:'Stroke length',min:50,max:130,step:0.5,unit:'mm',dec:1,learn:'stroke'})}
+      ${sliderHTML({path:'geometry.rodLength_mm',label:'Connecting rod length',min:90,max:260,step:1,unit:'mm',dec:0,learn:'rod'})}
+      ${sliderHTML({path:'geometry.compressionRatio',label:'Compression ratio',min:6,max:20,step:0.1,unit:': 1',dec:1,learn:'cr'})}
+      ${sliderHTML({path:'geometry.intakeValveDia_mm',label:'Intake valve diameter',min:15,max:55,step:0.5,unit:'mm',dec:1,learn:'ivd'})}
+      ${sliderHTML({path:'geometry.exhaustValveDia_mm',label:'Exhaust valve diameter',min:15,max:50,step:0.5,unit:'mm',dec:1,learn:'evd'})}
+      ${sliderHTML({path:'geometry.valveLift_mm',label:'Valve lift',min:4,max:18,step:0.5,unit:'mm',dec:1,learn:'lift'})}
+    </div>
+    <div class="section-title">Valve timing</div>
+    <div class="grid2">
+      ${sliderHTML({path:'geometry.ivo_degBTDC',label:'Intake valve opens (BTDC)',min:0,max:40,step:1,unit:'°',dec:0,learn:'ivo'})}
+      ${sliderHTML({path:'geometry.ivc_degABDC',label:'Intake valve closes (ABDC)',min:10,max:90,step:1,unit:'°',dec:0,learn:'ivc'})}
+      ${sliderHTML({path:'geometry.evo_degBBDC',label:'Exhaust valve opens (BBDC)',min:10,max:90,step:1,unit:'°',dec:0,learn:'evo'})}
+      ${sliderHTML({path:'geometry.evc_degATDC',label:'Exhaust valve closes (ATDC)',min:0,max:40,step:1,unit:'°',dec:0,learn:'evc'})}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Calculated geometry</h2><span class="mini">single source of truth</span></div>
+    <div class="grid2">
+      <div class="rows">
+        ${outHTML('Swept volume per cylinder','vd_cyl','cc')}
+        ${outHTML('Total displacement','disp_cc','cc')}
+        ${outHTML('Total displacement','disp_l','L')}
+        ${outHTML('Clearance volume per cylinder','vc','cc')}
+        ${outHTML('Crank radius (derived)','crank_r','mm')}
+      </div>
+      <div class="rows">
+        ${outHTML('Bore / stroke ratio','bs_ratio','')}
+        ${outHTML('Rod / crank ratio','rod_ratio','')}
+        ${outHTML('Mean piston speed','up','m/s')}
+        ${outHTML('Cycle duration','cycle_ms','ms')}
+        <div class="row"><span class="k">Cycle angle</span><span class="v">${STATE.cfg.architecture.strokeType===4?720:360} <u>deg</u></span></div>
+      </div>
+    </div>
+    <div class="help mt8">Crank radius is derived as stroke ÷ 2 and is displayed read-only to avoid two
+    conflicting sources of truth. Change stroke to change crank radius.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Piston kinematics</h3></div>
+    <div class="chart-wrap"><canvas id="kinChart"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Position from TDC</span><span><i style="background:#b45309"></i>Piston velocity</span></div>
+  </div>`;
+
+/* ---------- FUEL ---------- */
+TAB_RENDERERS.fuel=()=>{
+  const c=STATE.cfg, f=FUELS[c.architecture.fuel], s=STATE.gas;
+  return `
+  <div class="panel">
+    <div class="panel-head"><h2>Fuel &amp; chemistry laboratory</h2><span class="mini">${f.name}</span></div>
+    <div class="grid2">
+      ${selectHTML({path:'architecture.fuel',label:'Fuel',learn:'fuel',
+        options:Object.keys(FUELS).map(k=>({v:k,t:FUELS[k].name}))})}
+      ${selectHTML({path:'fuelControl.mode',label:'Fuel control authority',learn:'fuelMode',
+        options:[{v:'lambda',t:'λ target (fuel calculated from air)'},{v:'flow',t:'Fuel flow (λ calculated from air)'}],
+        help:'Only one control is authoritative at a time. The other is calculated.'})}
+    </div>
+    <div class="grid2 mt8">
+      ${sliderHTML({path:'fuelControl.lambdaTarget',label:'λ target',min:0.6,max:5,step:0.05,unit:'',dec:2,learn:'lambda',
+        help:'Only active when fuel control is "λ target".'})}
+      ${sliderHTML({path:'fuelControl.fuelFlow_gps',label:'Fuel flow command',min:0.02,max:5,step:0.01,unit:'g/s',dec:2,learn:'fuelFlow',
+        help:'Only active when fuel control is "fuel flow".'})}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Hydrogen chemistry</h3></div>
+    <div class="rows">
+      <div class="row"><span class="k">Balanced reaction</span><span class="v">${f.reaction}</span></div>
+      <div class="row"><span class="k">Stoichiometric oxygen</span><span class="v">${fmt(f.o2Stoich,3)} <u>kg O₂ / kg fuel</u></span></div>
+      <div class="row"><span class="k">Stoichiometric air</span><span class="v">${fmt(f.afrStoich,2)} <u>kg air / kg fuel</u></span></div>
+      <div class="row"><span class="k">Lower heating value (LHV)</span><span class="v">${fmt(f.lhv/1e6,1)} <u>MJ/kg</u></span></div>
+      <div class="row"><span class="k">Higher heating value (HHV)</span><span class="v">${fmt(f.hhv/1e6,1)} <u>MJ/kg</u></span></div>
+      <div class="row"><span class="k">Exhaust product(s)</span><span class="v">${f.products}</span></div>
+    </div>
+    <div class="help mt8">${f.notes} LHV is used for the energy balance; HHV includes the latent heat of
+    water vapour and is shown for reference only. The model does not condense exhaust water.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Calculated mixture state</h3></div>
+    <div class="grid2">
+      <div class="rows">
+        ${outHTML('λ (excess-air ratio)','lambda','')}
+        ${outHTML('φ (equivalence ratio)','phi','')}
+        ${outHTML('Air mass flow','m_air','g/s')}
+        ${outHTML('Fuel mass flow','m_fuel','g/s')}
+        ${outHTML('Fuel energy input','q_in','kW')}
+      </div>
+      <div class="rows">
+        ${outHTML('Theoretical water production','water','g/s')}
+        ${outHTML('Volumetric efficiency','eta_v','%')}
+        <div class="row"><span class="k">Mixture classification</span><span class="v">${mixtureLabel(s?s().lambda:1)}</span></div>
+        <div class="row"><span class="k">Combustion efficiency (est.)</span><span class="v">${fmt(combustionEfficiency(s?s().lambda:1)*100,1)} <u>%</u></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>λ sensitivity at the current operating point</h3><span class="mini">air flow held fixed</span></div>
+    <div class="chart-wrap"><canvas id="lambdaChart"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Brake power</span><span><i style="background:#b45309"></i>Brake thermal efficiency</span></div>
+  </div>`;
+};
+function mixtureLabel(l){
+  if(l<0.98)return '<span class="pill bad">Rich</span>';
+  if(l<=1.02)return '<span class="pill warn">Stoichiometric</span>';
+  if(l<=1.6)return '<span class="pill est">Lean</span>';
+  return '<span class="pill ok">Very lean</span>';
+}
+
+/* ---------- AIR ---------- */
+TAB_RENDERERS.air=()=>{
+  const c=STATE.cfg;
+  const boostHidden=c.architecture.aspiration==='na';
+  return `
+  <div class="panel">
+    <div class="panel-head"><h2>Air management</h2><span class="mini">gas exchange &amp; operating point</span></div>
+    <div class="grid2">
+      ${sliderHTML({path:'operating.rpm',label:'Engine speed',min:500,max:8000,step:50,unit:'rpm',dec:0,learn:'rpm'})}
+      ${sliderHTML({path:'operating.throttle',label:'Throttle / load request',min:0,max:100,step:1,unit:'%',dec:0,learn:'throttle'})}
+      ${sliderHTML({path:'operating.ambientPressure_kPa',label:'Ambient pressure',min:70,max:110,step:0.5,unit:'kPa',dec:1,learn:'pAmb'})}
+      ${sliderHTML({path:'operating.ambientTemp_C',label:'Ambient temperature',min:-20,max:55,step:1,unit:'°C',dec:0,learn:'tAmb'})}
+      ${sliderHTML({path:'operating.intakeTemp_C',label:'Intake charge temperature',min:-10,max:100,step:1,unit:'°C',dec:0,learn:'tIntake'})}
+      ${sliderHTML({path:'operating.intakeLoss_kPa',label:'Intake system loss',min:0,max:20,step:0.5,unit:'kPa',dec:1,learn:'intakeLoss'})}
+      ${sliderHTML({path:'operating.exhaustBackpressure_kPa',label:'Exhaust backpressure',min:0,max:40,step:0.5,unit:'kPa',dec:1,learn:'backpressure'})}
+      ${sliderHTML({path:'operating.humidity',label:'Relative humidity',min:0,max:100,step:1,unit:'%',dec:0,learn:'humidity'})}
+      ${sliderHTML({path:'operating.frictionScale',label:'Friction scale (model)',min:0.5,max:2,step:0.05,unit:'×',dec:2,learn:'friction'})}
+    </div>
+  </div>
+
+  <div class="panel ${boostHidden?'hidden':''}">
+    <div class="panel-head"><h3>Forced induction</h3><span class="mini">${c.architecture.aspiration==='na'?'not active (naturally aspirated)':c.architecture.aspiration}</span></div>
+    <div class="grid2">
+      ${sliderHTML({path:'aspirationParams.boost_kPa',label:'Boost pressure',min:0,max:200,step:5,unit:'kPa',dec:0,learn:'boost'})}
+      ${sliderHTML({path:'aspirationParams.intercoolerEff',label:'Intercooler effectiveness',min:0,max:1,step:0.05,unit:'',dec:2,learn:'ic'})}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Calculated gas-exchange state</h3></div>
+    <div class="grid2">
+      <div class="rows">
+        ${outHTML('Manifold pressure','p_man','kPa')}
+        ${outHTML('Effective trapped pressure','p_eff','kPa')}
+        ${outHTML('Intake air density','rho','kg/m³')}
+        ${outHTML('Intake valve gas velocity','v_valve','m/s')}
+        ${outHTML('Valve pressure loss','dp_valve','kPa')}
+      </div>
+      <div class="rows">
+        ${outHTML('Volumetric efficiency','eta_v','%')}
+        ${outHTML('Trapped air mass flow','m_air','g/s')}
+        ${outHTML('Fuel mass flow','m_fuel','g/s')}
+        <div class="row"><span class="k">Residual gas fraction (est.)</span><span class="v">${fmt(STATE.gas?STATE.gas.xr*100:NaN,1)} <u>%</u></span></div>
+        <div class="row"><span class="k">Charge temperature at IVC (est.)</span><span class="v">${fmt(STATE.gas?(STATE.gas.Tivc-273.15):NaN,0)} <u>°C</u></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>RPM sweep</h3><span class="mini">other parameters held fixed</span></div>
+    <div class="chart-wrap"><canvas id="sweepChart"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Brake power (kW)</span><span><i style="background:#b45309"></i>Torque (N·m)</span><span><i style="background:#15803d"></i>ηv (%)</span></div>
+  </div>`;
+};
+
+/* ---------- COMBUSTION ---------- */
+TAB_RENDERERS.combustion=()=>{
+  const pf=STATE.perf;
+  return `
+  <div class="panel">
+    <div class="panel-head"><h2>Combustion laboratory</h2><span class="mini">Wiebe heat-release approximation</span></div>
+    <div class="grid2">
+      ${sliderHTML({path:'combustion.sparkAdvance_degBTDC',label:'Spark advance (BTDC)',min:-10,max:50,step:1,unit:'°',dec:0,learn:'spark'})}
+      ${sliderHTML({path:'combustion.combustionDuration_deg',label:'Combustion duration (base)',min:20,max:120,step:1,unit:'°CA',dec:0,learn:'dur'})}
+      ${sliderHTML({path:'combustion.wiebe_m',label:'Wiebe form factor m',min:0.5,max:4,step:0.1,unit:'',dec:1,learn:'wiebe'})}
+      ${sliderHTML({path:'combustion.wallTemp_C',label:'Cylinder wall temperature',min:80,max:320,step:5,unit:'°C',dec:0,learn:'wall'})}
+    </div>
+    <div class="help mt8">The Wiebe function is an empirical burned-fraction approximation:
+    x<sub>b</sub>(θ) = 1 − exp[−a((θ−θ<sub>spark</sub>)/Δθ)<sup>m+1</sup>] with a = 5. It does not resolve
+    flame propagation, chemical kinetics or dissociation. Real hydrogen combustion can be faster and is
+    sensitive to hot spots and mixture homogeneity.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Heat-release rate and burned fraction</h3></div>
+    <div class="chart-wrap tall"><canvas id="hrChart"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Heat-release rate (J/°CA)</span><span><i style="background:#b45309"></i>Burned fraction</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Combustion indicators</h3></div>
+    <div class="grid2">
+      <div class="rows">
+        ${outHTML('Peak cylinder pressure','peak_p','bar')}
+        ${outHTML('Peak cylinder temperature','peak_t','K')}
+        ${outHTML('Exhaust temperature (est.)','exh_t','°C')}
+        ${outHTML('Heat transferred to walls','q_ht','kW')}
+      </div>
+      <div class="rows">
+        <div class="row"><span class="k">Pre-ignition / knock index</span><span class="v">${fmt(pf?pf.knockIdx*100:NaN,0)} <u>%</u> ${knockPill(pf?pf.knockIdx:0)}</span></div>
+        <div class="row"><span class="k">Peak heat flux</span><span class="v"><span data-out="q_flux">—</span> <u>W/cm²</u></span></div>
+        <div class="row"><span class="k">Combustion efficiency</span><span class="v">${fmt(combustionEfficiency(STATE.gas?STATE.gas.lambda:1)*100,1)} <u>%</u></span></div>
+        <div class="row"><span class="k">Effective burn duration</span><span class="v">${fmt(STATE.cycle?STATE.cycle.timing.dur:NaN,0)} <u>°CA</u></span></div>
+      </div>
+    </div>
+    <div class="help mt8">The knock / pre-ignition indicator is a heuristic weighting of end-of-compression
+    temperature, compression ratio, wall temperature and λ. It is <b>not</b> a validated knock limit and must
+    not be used to certify a real engine.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Cylinder pressure and temperature vs crank angle</h3></div>
+    <div class="chart-wrap tall"><canvas id="ptChart"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Pressure (bar)</span><span><i style="background:#b45309"></i>Temperature (K / 100)</span></div>
+  </div>`;
+};
+function knockPill(k){
+  if(k<0.35)return '<span class="pill ok">Low</span>';
+  if(k<0.65)return '<span class="pill warn">Moderate</span>';
+  return '<span class="pill bad">High</span>';
+}
+
+/* ---------- THERMAL ---------- */
+TAB_RENDERERS.thermal=()=>`
+  <div class="panel">
+    <div class="panel-head"><h2>Thermal laboratory</h2><span class="mini">estimated temperatures, not sensor measurements</span></div>
+    <div class="grid2">
+      ${sliderHTML({path:'operating.coolantTemp_C',label:'Coolant temperature',min:40,max:120,step:1,unit:'°C',dec:0,learn:'coolant'})}
+      ${sliderHTML({path:'operating.intakeTemp_C',label:'Intake charge temperature',min:-10,max:100,step:1,unit:'°C',dec:0,learn:'tIntake'})}
+      ${sliderHTML({path:'operating.ambientTemp_C',label:'Ambient temperature',min:-20,max:55,step:1,unit:'°C',dec:0,learn:'tAmb'})}
+      ${sliderHTML({path:'combustion.wallTemp_C',label:'Cylinder wall temperature',min:80,max:320,step:5,unit:'°C',dec:0,learn:'wall'})}
+    </div>
+    <div class="help mt8">Oil temperature, piston-crown temperature and head temperature are <b>calculated
+    outputs</b> of the simplified thermal network, not independent inputs. Change coolant temperature,
+    friction scale or load to influence them.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Thermal outputs</h3></div>
+    <div class="grid2">
+      <div class="rows">
+        ${outHTML('Heat to coolant (est.)','q_ht','kW')}
+        ${outHTML('Exhaust enthalpy (est.)','q_exh','kW')}
+        ${outHTML('Peak heat flux','q_flux','W/cm²')}
+        ${outHTML('Thermal load index','thermal_load','')}
+      </div>
+      <div class="rows">
+        ${outHTML('Oil temperature (est.)','oil_t','°C')}
+        ${outHTML('Piston crown temperature (est.)','piston_t','°C')}
+        ${outHTML('Cylinder head temperature (est.)','head_t','°C')}
+        ${outHTML('Exhaust temperature (est.)','exh_t','°C')}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Temperature sensitivity of trapped air mass</h3><span class="mini">at current manifold pressure</span></div>
+    <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Trapped air mass (mg/cyl)</span><span><i style="background:#b45309"></i>End-of-compression temperature (K / 100)</span></div>
+    <div class="help mt8">As intake temperature rises, air density falls, so the trapped oxygen mass falls
+    for the same manifold pressure. If λ is held constant, fuel flow falls with it.</div>
+  </div>`;
+
+/* ---------- LIVE SIM ---------- */
+TAB_RENDERERS.live=()=>`
+  <div class="panel">
+    <div class="panel-head"><h2>Live simulation</h2><span class="mini">animation and cycle state are driven by the same calculation engine</span></div>
+    <div class="grid2">
+      ${sliderHTML({path:'operating.rpm',label:'Engine speed',min:500,max:8000,step:50,unit:'rpm',dec:0,learn:'rpm'})}
+      ${sliderHTML({path:'operating.throttle',label:'Throttle / load',min:0,max:100,step:1,unit:'%',dec:0,learn:'throttle'})}
+      ${sliderHTML({path:'fuelControl.lambdaTarget',label:'λ target',min:0.6,max:5,step:0.05,unit:'',dec:2,learn:'lambda'})}
+      ${sliderHTML({path:'combustion.sparkAdvance_degBTDC',label:'Spark advance',min:-10,max:50,step:1,unit:'°',dec:0,learn:'spark'})}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Cycle strip chart</h3><span class="mini">current crank angle marked</span></div>
+    <div class="chart-wrap"><canvas id="liveP"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Cylinder pressure</span><span><i style="background:#f59e0b"></i>Current angle</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>State at the current crank angle</h3></div>
+    <div class="grid2">
+      <div class="rows">
+        <div class="row"><span class="k">Crank angle</span><span class="v" id="liveTheta">—</span></div>
+        <div class="row"><span class="k">Stroke</span><span class="v" id="liveStroke">—</span></div>
+        <div class="row"><span class="k">Piston position from TDC</span><span class="v" id="livePos">—</span></div>
+        <div class="row"><span class="k">Cylinder volume</span><span class="v" id="liveVol">—</span></div>
+      </div>
+      <div class="rows">
+        <div class="row"><span class="k">Cylinder pressure</span><span class="v" id="livePcyl">—</span></div>
+        <div class="row"><span class="k">Cylinder temperature</span><span class="v" id="liveTcyl">—</span></div>
+        <div class="row"><span class="k">Burned fraction</span><span class="v" id="liveXb">—</span></div>
+        <div class="row"><span class="k">Intake / exhaust valve</span><span class="v" id="liveValves">—</span></div>
+      </div>
+    </div>
+  </div>`;
+
+/* ---------- ANALYSIS ---------- */
+TAB_RENDERERS.analysis=()=>`
+  <div class="panel">
+    <div class="panel-head"><h2>Engineering analysis</h2><span class="mini">same underlying state as the dashboard</span></div>
+    <div class="chart-wrap tall"><canvas id="anPV"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Cycle</span><span><i style="background:#b91c1c"></i>Current angle</span></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head"><h3>Pressure vs crank angle</h3></div>
+      <div class="chart-wrap"><canvas id="anP"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Temperature vs crank angle</h3></div>
+      <div class="chart-wrap"><canvas id="anT"></canvas></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head"><h3>Piston position vs crank angle</h3></div>
+      <div class="chart-wrap"><canvas id="anX"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Heat release vs crank angle</h3></div>
+      <div class="chart-wrap"><canvas id="anHR"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>RPM sweep — torque, power and volumetric efficiency</h3></div>
+    <div class="chart-wrap tall"><canvas id="anSweep"></canvas></div>
+    <div class="legend"><span><i style="background:#1d4ed8"></i>Power (kW)</span><span><i style="background:#b45309"></i>Torque (N·m)</span><span><i style="background:#15803d"></i>ηv (%)</span></div>
+  </div>`;
+
+/* ---------- DIAGNOSTICS ---------- */
+TAB_RENDERERS.diagnostics=()=>{
+  const d=STATE.diags||[];
+  const list=d.map(x=>`
+    <div class="diag ${x.sev==='high'?'high':x.sev==='med'?'med':x.sev==='ok'?'ok':'low'}">
+      <div class="dt"><span class="cat">${x.cat}</span> ${x.title}</div>
+      <div class="dd">${x.detail}</div>
+      <div class="steps"><b>Affects:</b> ${x.affected} &nbsp;·&nbsp; <b>Investigate first:</b> ${x.first}</div>
+    </div>`).join('');
+  return `
+  <div class="panel">
+    <div class="panel-head"><h2>Engineering diagnostics</h2><span class="mini">${d.length} finding(s)</span></div>
+    <div class="help">Each finding is generated from the current calculated state, not from generic text.
+    A clean list does not prove a design is safe or durable.</div>
+    <div class="mt12">${list||'<div class="muted">No diagnostics.</div>'}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Experiment history</h2><span class="mini">last 25 parameter changes</span></div>
+    <div id="historyBox" class="rows"></div>
+  </div>`;
+};
+
+/* ---------- LIBRARY ---------- */
+TAB_RENDERERS.library=()=>{
+  const lib=loadLibrary();
+  const items=lib.map(x=>`
+    <div class="lib-item">
+      <div class="nm" title="${x.name}">${x.name}</div>
+      <div class="meta">${x.cfg.architecture.cylinders} cyl · ${fmt(x.cfg.geometry.bore_mm,1)}×${fmt(x.cfg.geometry.stroke_mm,1)} mm · CR ${fmt(x.cfg.geometry.compressionRatio,1)}</div>
+      <button class="btn sm" data-load="${x.id}">Load</button>
+      <button class="btn sm" data-dup="${x.id}">Dup</button>
+      <button class="btn sm" data-ren="${x.id}">Rename</button>
+      <button class="btn sm danger" data-del="${x.id}">Delete</button>
+    </div>`).join('');
+  return `
+  <div class="panel">
+    <div class="panel-head"><h2>Engine design library</h2><span class="mini">${lib.length} saved design(s)</span></div>
+    <div class="btn-row">
+      <button class="btn primary" id="libSave">Save current design</button>
+      <button class="btn" id="libReset">Reset to documented example</button>
+      <button class="btn" id="libExport">Export current JSON</button>
+      <label class="btn" style="position:relative;overflow:hidden">Import JSON
+        <input type="file" id="libImport" accept="application/json" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+      </label>
+    </div>
+    <div class="library-list mt12">${items||'<div class="muted">Library is empty.</div>'}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Compare two designs</h2></div>
+    <div class="grid2">
+      <div class="ctrl"><div class="ctrl-head"><label>Design A</label></div>
+        <select id="cmpA">${lib.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</select></div>
+      <div class="ctrl"><div class="ctrl-head"><label>Design B</label></div>
+        <select id="cmpB">${lib.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="btn-row mt8"><button class="btn primary" id="cmpRun">Run comparison</button></div>
+    <div id="cmpOut" class="mt12"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Export / import format</h3></div>
+    <div class="help">Designs are stored in browser localStorage under <code>hice_designs_v1</code>. Export
+    produces a JSON file containing the complete design configuration, which can be re-imported on another
+    machine. The simulator does not upload anything.</div>
+  </div>`;
+};
+
+/* ---------- LEARNING ---------- */
+const LEARN={
+  bore:{t:'Bore diameter',u:'mm',f:'V_d = (π/4)·B²·S·n',a:'Displacement, valve size relative to piston area, surface-to-volume ratio',b:'Displacement, airflow, power potential, heat loss',w:'A larger bore increases displacement and allows larger valves, but increases the combustion-chamber surface area and can slow flame travel.',ex:'80 mm bore, 90 mm stroke, 4 cylinders → 4.524 L? No: 0.005027 m² × 0.09 m × 4 = 1.81 L.',lim:'Bore alone does not set displacement; stroke and cylinder count also matter.'},
+  stroke:{t:'Stroke length',u:'mm',f:'V_d = (π/4)·B²·S·n ; U_p = 2·S·N/60',a:'Displacement, mean piston speed, rod geometry',b:'Piston speed, friction, RPM capability, torque characteristics',w:'Longer stroke increases displacement and torque at low speed but raises mean piston speed and friction at high speed.',ex:'S = 90 mm at 3000 rpm → U_p = 2×0.09×3000/60 = 9 m/s.',lim:'Crank radius is derived as S/2; it is not an independent input.'},
+  rod:{t:'Connecting rod length',u:'mm',f:'x(θ) = r cosθ + √(L² − r² sin²θ)',a:'Rod ratio L/r, piston side thrust, piston acceleration',b:'Friction, noise, piston slap, high-RPM capability',w:'A longer rod reduces side thrust and piston acceleration but increases engine height.',ex:'L = 150 mm, r = 45 mm → L/r = 3.33.',lim:'The model computes kinematics exactly but does not resolve side-load stress.'},
+  cr:{t:'Compression ratio',u:': 1',f:'CR = (V_d + V_c) / V_c',a:'Clearance volume, end-of-compression temperature and pressure',b:'Thermal efficiency, knock risk, peak pressure',w:'Higher CR raises ideal-cycle efficiency but raises end-of-compression temperature and knock/pre-ignition risk. Hydrogen is particularly sensitive to hot-spot pre-ignition.',ex:'CR 12 → V_c = V_d/11.',lim:'The model does not resolve knock chemistry; the risk index is heuristic.'},
+  ivd:{t:'Intake valve diameter',u:'mm',f:'A_eff = n·(π/4)·d²·C_d',a:'Intake flow area, valve gas velocity, pressure loss',b:'Volumetric efficiency, trapped air mass, power',w:'A larger intake valve reduces flow loss and improves breathing, especially at high RPM.',ex:'2 × 32 mm valves, C_d 0.33 → A_eff ≈ 5.3 cm².',lim:'The flow model is a simple pressure-loss estimate, not a discharge-coefficient map.'},
+  evd:{t:'Exhaust valve diameter',u:'mm',f:'A_exh = n·(π/4)·d²',a:'Exhaust flow area, backpressure sensitivity',b:'Pumping loss, residual gas fraction',w:'Adequate exhaust area reduces pumping work and residual gas.',ex:'28 mm exhaust valve.',lim:'Exhaust flow is not resolved in detail.'},
+  lift:{t:'Valve lift',u:'mm',f:'Lift profile ≈ L_max·sin(π·fraction open)',a:'Valve open area, flow loss',b:'Volumetric efficiency, pumping loss',w:'More lift increases flow area but can increase valve-train inertia and packaging height.',ex:'10 mm lift on a 32 mm valve.',lim:'The lift profile is a simple sine approximation.'},
+  ivo:{t:'Intake valve opening (BTDC)',u:'°',f:'IVO = 720° − advance',a:'Valve overlap, scavenging',b:'Residual gas, low-lift flow, idle quality',w:'Early IVO increases overlap and can improve scavenging at high load, but hurts idle and low-speed stability.',ex:'10° BTDC.',lim:'Overlap flow is not resolved in detail.'},
+  ivc:{t:'Intake valve closing (ABDC)',u:'°',f:'IVC = 180° + retard',a:'Trapped volume, effective compression ratio',b:'Volumetric efficiency, low-speed torque',w:'Late IVC can use intake ram at high RPM but reduces low-speed trapped mass.',ex:'50° ABDC.',lim:'Ram tuning is not modelled.'},
+  evo:{t:'Exhaust valve opening (BBDC)',u:'°',f:'EVO = 540° − advance',a:'Blowdown timing, expansion work',b:'Pumping loss, exhaust temperature, catalyst heating',w:'Early EVO reduces pumping work but sacrifices expansion work.',ex:'50° BBDC.',lim:'Blowdown is modelled as an instantaneous state change.'},
+  evc:{t:'Exhaust valve closing (ATDC)',u:'°',f:'EVC = 720° + retard',a:'Overlap, residual gas',b:'Residual fraction, knock risk, emissions',w:'Late EVC increases overlap and residual gas.',ex:'10° ATDC.',lim:'Residual fraction is an estimate.'},
+  rpm:{t:'Engine speed',u:'rpm',f:'U_p = 2·S·N/60 ; P = T·ω',a:'Piston speed, cycle frequency, valve flow velocity',b:'Power, friction, volumetric efficiency, heat transfer',w:'Higher RPM increases power potential but also friction and flow losses.',ex:'3000 rpm → 50 rev/s.',lim:'The model is quasi-steady and does not resolve acoustic tuning.'},
+  throttle:{t:'Throttle / load request',u:'%',f:'p_man ≈ p_amb·(0.3 + 0.7·throttle)',a:'Manifold pressure, trapped air mass',b:'Load, λ (if fuel is flow-controlled), pumping loss',w:'Closing the throttle reduces manifold pressure and trapped air; for hydrogen, load can also be controlled by λ (quality control).',ex:'100% throttle → p_man ≈ p_amb − losses.',lim:'Not a detailed throttle-body flow model.'},
+  pAmb:{t:'Ambient pressure',u:'kPa',f:'ρ = p/(R·T)',a:'Air density, manifold pressure',b:'Trapped air mass, power, λ',w:'Lower ambient pressure (altitude) reduces air density and power.',ex:'101.325 kPa at sea level.',lim:'Humidity effects are limited.'},
+  tAmb:{t:'Ambient temperature',u:'°C',f:'ρ = p/(R·T)',a:'Air density',b:'Trapped air mass, knock risk, power',w:'Hot ambient air reduces density and power and raises knock risk.',ex:'25 °C → 298 K.',lim:'The intake path is not thermally resolved.'},
+  tIntake:{t:'Intake charge temperature',u:'°C',f:'ρ = p/(R·T)',a:'Air density, trapped mass, end-of-compression temperature',b:'Volumetric efficiency, power, pre-ignition risk',w:'Cooler charge is denser and safer against pre-ignition; intercooling is important for boosted engines.',ex:'30 °C → 303 K.',lim:'Heat transfer along the intake path is not resolved.'},
+  intakeLoss:{t:'Intake system loss',u:'kPa',f:'p_eff = p_man − Δp_loss',a:'Effective trapped pressure',b:'Volumetric efficiency, power',w:'Air filter, throttle, bends and port losses reduce the pressure available to fill the cylinder.',ex:'3 kPa loss.',lim:'Lumped constant, not a flow map.'},
+  backpressure:{t:'Exhaust backpressure',u:'kPa',f:'p_exh = p_amb + Δp_back',a:'Exhaust pressure, residual fraction',b:'Pumping work, ηv, exhaust temperature',w:'High backpressure increases pumping loss and residual gas.',ex:'5 kPa.',lim:'Not a full exhaust-system model.'},
+  humidity:{t:'Relative humidity',u:'%',f:'—',a:'(limited) air composition and density',b:'Minor effects on density and combustion',w:'Humidity slightly reduces air density and can affect knock.',ex:'0% in the baseline.',lim:'The current model does not fully resolve humidity composition effects.'},
+  friction:{t:'Friction scale',u:'×',f:'FMEP = (0.4 + 0.005·p_max + 0.009·U_p + 0.0009·U_p²)·scale',a:'Friction mean effective pressure',b:'Brake power, mechanical efficiency, oil temperature',w:'Scaling friction lets you explore sensitivity to friction assumptions.',ex:'1.0 = baseline Chen–Flynn estimate.',lim:'Chen–Flynn is an empirical correlation, not a tribological model.'},
+  boost:{t:'Boost pressure',u:'kPa',f:'p_man = p_amb + boost·(throttle/100)',a:'Manifold pressure, air density',b:'Trapped air mass, power, thermal load',w:'Boost increases air mass and power but raises thermal and mechanical loads.',ex:'50 kPa boost.',lim:'The compressor map and turbo lag are not modelled.'},
+  ic:{t:'Intercooler effectiveness',u:'',f:'T_post_IC = T_comp − ε·(T_comp − T_amb)',a:'Charge temperature after cooling',b:'Density, knock risk, power',w:'Higher effectiveness lowers charge temperature and improves density.',ex:'0.7.',lim:'Informational; the user-set intake temperature remains authoritative.'},
+  spark:{t:'Spark advance (BTDC)',u:'°',f:'θ_spark = 360° − advance',a:'Start of heat release relative to TDC',b:'Peak pressure, thermal efficiency, knock risk',w:'More advance increases expansion work but can cause knock or pre-ignition.',ex:'15° BTDC.',lim:'Wiebe heat release is an approximation.'},
+  dur:{t:'Combustion duration',u:'°CA',f:'x_b = 1 − exp[−5((θ−θ_spark)/Δθ)^(m+1)]',a:'Burn rate, peak pressure, efficiency',b:'Peak temperature, NOx (qualitative), thermal load',w:'Shorter duration (faster burn) raises peak pressure and efficiency but increases knock risk.',ex:'50 °CA base; lengthened for very lean mixtures.',lim:'Real burn duration depends on chamber geometry, turbulence and mixture.'},
+  wiebe:{t:'Wiebe form factor m',u:'',f:'see duration',a:'Shape of the burn curve',b:'Heat-release profile, peak pressure',w:'Higher m gives a more S-shaped burn.',ex:'m = 2.',lim:'Empirical.'},
+  wall:{t:'Cylinder wall temperature',u:'°C',f:'Q_ht = h·A·(T_gas − T_wall)',a:'Heat transfer, wall thermal state',b:'Heat loss, efficiency, pre-ignition risk',w:'Hotter walls reduce heat loss but increase pre-ignition risk.',ex:'180 °C.',lim:'A single lumped wall temperature is used.'},
+  coolant:{t:'Coolant temperature',u:'°C',f:'—',a:'Wall temperature, oil temperature estimate',b:'Heat rejection, thermal loading, friction',w:'Coolant temperature sets the thermal boundary condition for the engine.',ex:'85 °C.',lim:'The cooling system itself is not modelled.'},
+  lambda:{t:'λ (excess-air ratio)',u:'',f:'λ = (A/F) / (A/F)_stoich',a:'Fuel/air ratio relative to stoichiometric',b:'Combustion efficiency, peak temperature, power, emissions',w:'λ < 1 is rich; λ = 1 is stoichiometric; λ > 1 is lean. Hydrogen can run very lean, which reduces peak temperature and NOx.',ex:'λ = 2 → twice the stoichiometric air per unit fuel.',lim:'λ is a global average; local mixture stratification is not resolved.'},
+  phi:{t:'φ (equivalence ratio)',u:'',f:'φ = 1/λ',a:'Inverse of λ',b:'Same as λ',w:'φ > 1 is rich; φ < 1 is lean.',ex:'λ 2 → φ 0.5.',lim:'—'},
+  fuelFlow:{t:'Fuel flow command',u:'g/s',f:'m_fuel = command / (n_cyl·cycles_per_sec)',a:'Fuel mass per cycle',b:'λ, energy input, power',w:'In "fuel flow" mode this command is authoritative and λ is calculated from the available air.',ex:'0.55 g/s.',lim:'Injector dynamics are not modelled.'},
+  fuelMode:{t:'Fuel control authority',u:'',f:'—',a:'Which mixture variable is independent',b:'λ, fuel flow, power',w:'Selecting λ target makes fuel flow the calculated quantity; selecting fuel flow makes λ calculated. This prevents contradictory manual overrides.',ex:'λ target mode.',lim:'—'},
+  fuel:{t:'Fuel',u:'',f:'—',a:'Stoichiometric AFR, heating value, combustion assumptions',b:'All fuel-dependent outputs',w:'Hydrogen has a much higher stoichiometric AFR (34.3) and LHV (120 MJ/kg) than gasoline.',ex:'H₂ vs CH₄.',lim:'Diesel is intentionally not offered as an interchangeable SI fuel.'},
+  valves:{t:'Valves per cylinder',u:'',f:'A_eff = n·(π/4)·d²·C_d',a:'Flow area',b:'Breathing, power',w:'More valves increase flow area.',ex:'4 valves (2 intake, 2 exhaust).',lim:'Only intake area affects the current gas-exchange estimate.'},
+  cylinderCount:{t:'Cylinder count',u:'',f:'V_total = V_d,cyl · n',a:'Total displacement, total airflow',b:'Power, torque, smoothness',w:'More cylinders increase displacement and smoothness but add friction and weight.',ex:'4 cylinders.',lim:'Firing order is informational only.'}
+};
+LEARN.valveArr={t:'Valve arrangement',u:'',f:'—',a:'Valve-train layout',b:'(informational in this model)',w:'DOHC allows more valves and higher RPM.',ex:'DOHC.',lim:'Not mechanically resolved.'};
+LEARN.crown={t:'Piston crown',u:'',f:'—',a:'(schematic only)',b:'Combustion chamber shape',w:'Crown shape affects squish and flame development.',ex:'Flat.',lim:'Not resolved in the single-zone model.'};
+LEARN.layout={t:'Cylinder layout',u:'',f:'—',a:'(informational)',b:'Packaging, balance',w:'Inline and Vee layouts differ in packaging and balance.',ex:'Inline-4.',lim:'Informational only.'};
+LEARN.strokeType={t:'Engine type',u:'',f:'—',a:'Cycle length, timing',b:'Power density, emissions, complexity',w:'4-stroke is fully modelled. 2-stroke uses a simplified port/scavenging model.',ex:'4-stroke.',lim:'2-stroke results are indicative only.'};
+LEARN.aspiration={t:'Aspiration',u:'',f:'p_man = p_amb + boost',a:'Manifold pressure',b:'Air mass, power, thermal load',w:'Forced induction increases air mass but raises thermal and mechanical loads.',ex:'Naturally aspirated.',lim:'Compressor maps are not modelled.'};
+
+/* ============================ LEARNING MODAL ============================ */
+function openLearn(key){
+  const d=LEARN[key];
+  if(!d)return;
+  document.getElementById('modalTitle').textContent=d.t;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="kv">
+      <div class="k">Unit</div><div class="v">${d.u||'—'}</div>
+      <div class="k">Formula</div><div class="v">${d.f||'—'}</div>
+      <div class="k">Affected by</div><div class="v">${d.a||'—'}</div>
+      <div class="k">Affects</div><div class="v">${d.b||'—'}</div>
+      <div class="k">Why it matters</div><div class="v">${d.w||'—'}</div>
+      <div class="k">Example</div><div class="v">${d.ex||'—'}</div>
+    </div>
+    <div class="note"><b>Model limitation:</b> ${d.lim||'See project notes.'}</div>`;
+  document.getElementById('modal').classList.add('open');
+}
+function bindLearnables(root){
+  root.querySelectorAll('[data-learn]').forEach(el=>{
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>{
+      if(UI.learn)openLearn(el.dataset.learn);
+    });
+  });
+}
+
+/* ============================ CONTROL BINDING ============================ */
+let recomputeTimer=null;
+function scheduleRecompute(){
+  clearTimeout(recomputeTimer);
+  recomputeTimer=setTimeout(()=>{
+    recompute();
+    updateOutputs();
+    updateTelemetry();
+    updateDiagnosticsMini();
+    drawTabCharts(STATE.activeTab);
+    if(STATE.activeTab==='diagnostics')renderActiveTab();
+    pushHistory();
+  },60);
+}
+function bindControls(root){
+  root.querySelectorAll('[data-path]').forEach(el=>{
+    const path=el.dataset.path;
+    const isSelect=el.tagName==='SELECT';
+    const handler=()=>{
+      let v=isSelect?el.value:parseFloat(el.value);
+      const cur=getPath(STATE.cfg,path);
+      if(typeof cur==='number')v=Number(v);
+      setPath(STATE.cfg,path,v);
+      if(el.dataset.outid){
+        const o=document.getElementById(el.dataset.outid);
+        if(o)o.textContent=fmt(v,parseInt(el.dataset.dec)||1);
+      }
+      // re-render if a structural option changed
+      if(path==='architecture.aspiration'||path==='architecture.fuel'||
+         path==='architecture.strokeType'||path==='fuelControl.mode'){
+        recompute(); syncControls(); renderActiveTab(); updateTelemetry();
+        updateDiagnosticsMini(); return;
+      }
+      scheduleRecompute();
+    };
+    el.addEventListener('input',handler);
+    el.addEventListener('change',handler);
+  });
+}
+function syncControls(){
+  document.querySelectorAll('[data-path]').forEach(el=>{
+    const v=getPath(STATE.cfg,el.dataset.path);
+    if(el.tagName==='SELECT')el.value=String(v);
+    else{
+      el.value=v;
+      if(el.dataset.outid){
+        const o=document.getElementById(el.dataset.outid);
+        if(o)o.textContent=fmt(v,parseInt(el.dataset.dec)||1);
+      }
+    }
+  });
+}
+
+/* ============================ UPDATE PANELS ============================ */
+function updateTelemetry(){
+  const box=document.getElementById('telemetry');
+  if(!box||!STATE.cycle)return;
+  box.innerHTML=telemetryHTML(STATE.cycle);
+  const st=document.getElementById('telState');
+  if(st)st.textContent=`${fmt(STATE.cfg.operating.rpm,0)} rpm`;
+}
+function updateDiagnosticsMini(){
+  const box=document.getElementById('diagMini');
+  const cnt=document.getElementById('diagCount');
+  if(!box)return;
+  const d=STATE.diags||[];
+  const top=d.slice(0,4);
+  box.innerHTML=top.map(x=>`
+    <div class="diag ${x.sev==='high'?'high':x.sev==='med'?'med':x.sev==='ok'?'ok':'low'}" style="margin-bottom:5px">
+      <div class="dt" style="font-size:11.5px">${x.title}</div>
+      <div class="dd" style="font-size:10.5px">${x.detail.slice(0,140)}${x.detail.length>140?'…':''}</div>
+    </div>`).join('')||'<div class="muted mini">No findings.</div>';
+  if(cnt)cnt.textContent=d.length+' finding(s)';
+  const hdr=document.getElementById('hdrDesign');
+  if(hdr)hdr.textContent=STATE.cfg.name;
+  const hf=document.getElementById('hdrFuel');
+  if(hf)hf.textContent=FUELS[STATE.cfg.architecture.fuel].short+' · Spark Ignition';
+}
+
+/* ============================ CHART DATA ============================ */
+function drawTabCharts(tab){
+  const cyc=STATE.cycle;
+  if(!cyc)return;
+  if(tab==='overview'){
+    drawChart(document.getElementById('ovPV'),{
+      xMin:0,xMax:cyc.geom.Vtot*1e6,yMin:0,
+      yMax:Math.max(2,cyc.perf.pMax/1e5*1.05),
+      xLabel:'Volume (cc)',yLabel:'Pressure (bar)',
+      series:[{data:Array.from({length:cyc.cycleDeg+1},(_,i)=>[cyc.V[i]*1e6,cyc.p[i]/1e5]),color:'#1d4ed8',width:1.8}],
+      markers:[{x:cyc.V[Math.round(ANIM.theta)%cyc.cycleDeg]*1e6,y:cyc.p[Math.round(ANIM.theta)%cyc.cycleDeg]/1e5,color:'#b91c1c'}]
+    });
+    drawChart(document.getElementById('ovPth'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,
+      yMax:Math.max(2,cyc.perf.pMax/1e5*1.05),
+      xLabel:'Crank angle (°)',yLabel:'Pressure (bar)',
+      series:[{data:Array.from({length:cyc.cycleDeg+1},(_,i)=>[i,cyc.p[i]/1e5]),color:'#1d4ed8',width:1.6}],
+      markers:[{x:cyc.timing.thetaSpark,y:cyc.p[Math.round(cyc.timing.thetaSpark)%cyc.cycleDeg]/1e5,color:'#f59e0b'}]
+    });
+  }
+  if(tab==='geometry'){
+    const g=STATE.geom;
+    const pos=[],vel=[];
+    for(let a=0;a<=720;a+=4){
+      pos.push([a,pistonPositionMod(a,g)*1000]);
+      vel.push([a,pistonVelocity(a%360,g,STATE.cfg.operating.rpm)]);
+    }
+    const vmax=Math.max(5,...vel.map(v=>Math.abs(v[1])))*1.1;
+    drawChart(document.getElementById('kinChart'),{
+      xMin:0,xMax:720,yMin:Math.min(0,...pos.map(p=>p[1])),
+      yMax:Math.max(1,...pos.map(p=>p[1])),
+      xLabel:'Crank angle (°)',yLabel:'Position (mm)',
+      series:[
+        {data:pos,color:'#1d4ed8',width:1.6},
+      ]
+    });
+  }
+  if(tab==='fuel'){
+    const base=STATE.cfg;
+    const pts=[];const eff=[];
+    const airMass=STATE.gas?STATE.gas.mAir:1e-4;
+    for(let l=0.6;l<=4.01;l+=0.1){
+      const c=deepClone(base);
+      c.fuelControl.mode='lambda'; c.fuelControl.lambdaTarget=l;
+      try{
+        const s=simulateCycle(c);
+        pts.push([l,s.perf.pBrake/1000]);
+        eff.push([l,s.perf.etaBrake*100]);
+      }catch(e){}
+    }
+    drawChart(document.getElementById('lambdaChart'),{
+      xMin:0.6,xMax:4.1,yMin:0,
+      yMax:Math.max(1,...pts.map(p=>p[1]),...eff.map(p=>p[1]))*1.05,
+      xLabel:'λ',yLabel:'Power (kW) / η (%)',
+      series:[{data:pts,color:'#1d4ed8',width:1.7},{data:eff,color:'#b45309',width:1.7}]
+    });
+  }
+  if(tab==='air'){
+    const sw=STATE.sweep||[];
+    if(sw.length){
+      const maxP=Math.max(...sw.map(s=>s.power),1);
+      const maxT=Math.max(...sw.map(s=>Math.abs(s.torque)),1);
+      drawChart(document.getElementById('sweepChart'),{
+        xMin:sw[0].rpm,xMax:sw[sw.length-1].rpm,yMin:0,
+        yMax:Math.max(maxP,maxT)*1.1,
+        xLabel:'RPM',yLabel:'Power (kW) / Torque (N·m)',
+        series:[
+          {data:sw.map(s=>[s.rpm,s.power]),color:'#1d4ed8',width:1.7},
+          {data:sw.map(s=>[s.rpm,s.torque]),color:'#b45309',width:1.7},
+          {data:sw.map(s=>[s.rpm,s.etaV*100]),color:'#15803d',width:1.4,dash:[4,3]}
+        ]
+      });
+    }
+  }
+  if(tab==='combustion'){
+    const hr=[],xb=[];
+    for(let i=0;i<=cyc.cycleDeg;i+=2){
+      hr.push([i,cyc.hr[i]]);
+      xb.push([i,cyc.xb[i]*100]);
+    }
+    drawChart(document.getElementById('hrChart'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,
+      yMax:Math.max(1,...hr.map(p=>p[1]))*1.05,
+      xLabel:'Crank angle (°)',yLabel:'dQ/dθ (J/°CA)',
+      series:[{data:hr,color:'#1d4ed8',width:1.6}]
+    });
+    const pr=[],te=[];
+    for(let i=0;i<=cyc.cycleDeg;i+=2){
+      pr.push([i,cyc.p[i]/1e5]); te.push([i,cyc.T[i]/100]);
+    }
+    drawChart(document.getElementById('ptChart'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,
+      yMax:Math.max(cyc.perf.pMax/1e5,cyc.perf.TMax/100)*1.08,
+      xLabel:'Crank angle (°)',yLabel:'bar / (K/100)',
+      series:[{data:pr,color:'#1d4ed8',width:1.6},{data:te,color:'#b45309',width:1.6}]
+    });
+  }
+  if(tab==='thermal'){
+    const pts=[],tk=[];
+    const base=STATE.cfg;
+    for(let t=-10;t<=100;t+=5){
+      const c=deepClone(base); c.operating.intakeTemp_C=t;
+      try{
+        const s=simulateCycle(c);
+        pts.push([t,s.gas.mAir*1e6]); // mg
+        tk.push([t,s.gas.Tivc*Math.pow(s.geom.CR,0.37)/100]);
+      }catch(e){}
+    }
+    drawChart(document.getElementById('tempChart'),{
+      xMin:-10,xMax:100,yMin:0,
+      yMax:Math.max(1,...pts.map(p=>p[1]))*1.1,
+      xLabel:'Intake temperature (°C)',yLabel:'Air mass (mg)',
+      series:[{data:pts,color:'#1d4ed8',width:1.7}]
+    });
+  }
+  if(tab==='live'){
+    const pr=[];
+    for(let i=0;i<=cyc.cycleDeg;i+=2)pr.push([i,cyc.p[i]/1e5]);
+    const idx=Math.round(ANIM.theta)%cyc.cycleDeg;
+    drawChart(document.getElementById('liveP'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,
+      yMax:Math.max(2,cyc.perf.pMax/1e5*1.05),
+      xLabel:'Crank angle (°)',yLabel:'Pressure (bar)',
+      series:[{data:pr,color:'#1d4ed8',width:1.6}],
+      markers:[{x:idx,y:cyc.p[idx]/1e5,color:'#f59e0b'}]
+    });
+  }
+  if(tab==='analysis'){
+    drawChart(document.getElementById('anPV'),{
+      xMin:0,xMax:cyc.geom.Vtot*1e6,yMin:0,
+      yMax:Math.max(2,cyc.perf.pMax/1e5*1.05),
+      xLabel:'Volume (cc)',yLabel:'Pressure (bar)',
+      series:[{data:Array.from({length:cyc.cycleDeg+1},(_,i)=>[cyc.V[i]*1e6,cyc.p[i]/1e5]),color:'#1d4ed8',width:1.8}],
+      markers:[{x:cyc.V[Math.round(ANIM.theta)%cyc.cycleDeg]*1e6,y:cyc.p[Math.round(ANIM.theta)%cyc.cycleDeg]/1e5,color:'#b91c1c'}]
+    });
+    const pr=[],te=[],px=[],hrr=[];
+    for(let i=0;i<=cyc.cycleDeg;i+=2){
+      pr.push([i,cyc.p[i]/1e5]); te.push([i,cyc.T[i]]);
+      px.push([i,cyc.xPist[i]*1000]); hrr.push([i,cyc.hr[i]]);
+    }
+    drawChart(document.getElementById('anP'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,yMax:Math.max(2,cyc.perf.pMax/1e5*1.05),
+      xLabel:'°CA',yLabel:'bar',
+      series:[{data:pr,color:'#1d4ed8',width:1.5}]
+    });
+    drawChart(document.getElementById('anT'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,yMax:Math.max(400,cyc.perf.TMax*1.05),
+      xLabel:'°CA',yLabel:'K',
+      series:[{data:te,color:'#b45309',width:1.5}]
+    });
+    drawChart(document.getElementById('anX'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,
+      yMax:Math.max(1,cyc.geom.S*1000*1.05),
+      xLabel:'°CA',yLabel:'mm',
+      series:[{data:px,color:'#15803d',width:1.5}]
+    });
+    drawChart(document.getElementById('anHR'),{
+      xMin:0,xMax:cyc.cycleDeg,yMin:0,
+      yMax:Math.max(1,...hrr.map(p=>p[1]))*1.05,
+      xLabel:'°CA',yLabel:'J/°CA',
+      series:[{data:hrr,color:'#7c3aed',width:1.5}]
+    });
+    const sw=STATE.sweep||[];
+    if(sw.length){
+      const maxP=Math.max(...sw.map(s=>s.power),1);
+      const maxT=Math.max(...sw.map(s=>Math.abs(s.torque)),1);
+      drawChart(document.getElementById('anSweep'),{
+        xMin:sw[0].rpm,xMax:sw[sw.length-1].rpm,yMin:0,
+        yMax:Math.max(maxP,maxT)*1.1,
+        xLabel:'RPM',yLabel:'kW / N·m',
+        series:[
+          {data:sw.map(s=>[s.rpm,s.power]),color:'#1d4ed8',width:1.8},
+          {data:sw.map(s=>[s.rpm,s.torque]),color:'#b45309',width:1.8},
+          {data:sw.map(s=>[s.rpm,s.etaV*100]),color:'#15803d',width:1.4,dash:[4,3]}
+        ]
+      });
+    }
+  }
+}
+
+/* ============================ ANIMATION LOOP ============================ */
+function tick(t){
+  requestAnimationFrame(tick);
+  if(!ANIM.last)ANIM.last=t;
+  const dt=Math.min(0.12,(t-ANIM.last)/1000);
+  ANIM.last=t;
+  if(ANIM.playing&&STATE.cycle){
+    const rpm=STATE.cfg.operating.rpm;
+    const degPerSec=6*rpm*ANIM.speed/100;
+    ANIM.theta=(ANIM.theta+degPerSec*dt)%STATE.cycle.cycleDeg;
+  }
+  ANIM.acc+=dt;
+  const interval=UI.lowPerf?0.14:0.05;
+  if(ANIM.acc<interval)return;
+  ANIM.acc=0;
+  drawEngine();
+  updateLiveState();
+  if(STATE.activeTab==='live'||STATE.activeTab==='overview'||STATE.activeTab==='analysis'){
+    drawTabCharts(STATE.activeTab);
+  }
+}
+function updateLiveState(){
+  const cyc=STATE.cycle; if(!cyc)return;
+  const idx=Math.min(cyc.cycleDeg,Math.round(ANIM.theta%cyc.cycleDeg));
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('liveTheta',fmt(ANIM.theta,0)+'°');
+  let st='—';
+  if(cyc.is4){
+    const a=ANIM.theta%720;
+    st=a<180?'Intake':a<360?'Compression':a<540?'Power':'Exhaust';
+  }else{st=(ANIM.theta%360<100||ANIM.theta%360>260)?'Compression/Power':'Scavenging';}
+  set('liveStroke',st);
+  set('livePos',fmt(cyc.xPist[idx]*1000,1)+' mm');
+  set('liveVol',fmt(cyc.V[idx]*1e6,1)+' cc');
+  set('livePcyl',fmt(cyc.p[idx]/1e5,2)+' bar');
+  set('liveTcyl',fmt(cyc.T[idx],0)+' K');
+  set('liveXb',fmt((cyc.xb[idx]||0)*100,1)+' %');
+  const t=cyc.timing;
+  const io=valveLiftFrac(ANIM.theta,((t.ivO%cyc.cycleDeg)+cyc.cycleDeg)%cyc.cycleDeg,((t.ivC%cyc.cycleDeg)+cyc.cycleDeg)%cyc.cycleDeg,1,cyc.cycleDeg)>0.02;
+  const eo=valveLiftFrac(ANIM.theta,((t.evO%cyc.cycleDeg)+cyc.cycleDeg)%cyc.cycleDeg,((t.evC%cyc.cycleDeg)+cyc.cycleDeg)%cyc.cycleDeg,1,cyc.cycleDeg)>0.02;
+  set('liveValves',`${io?'Open':'Closed'} / ${eo?'Open':'Closed'}`);
+}
+
+/* ============================ DESIGN LIBRARY ============================ */
+const LS='hice_designs_v1';
+function loadLibrary(){
+  try{
+    const raw=localStorage.getItem(LS);
+    if(!raw){
+      const seed=[{id:'baseline',name:'H₂ Baseline I4',cfg:deepClone(DEFAULT_CONFIG)}];
+      localStorage.setItem(LS,JSON.stringify(seed));
+      return seed;
+    }
+    return JSON.parse(raw)||[];
+  }catch(e){return [];}
+}
+function saveLibrary(list){
+  try{localStorage.setItem(LS,JSON.stringify(list));}
+  catch(e){alert('Could not save: browser storage unavailable or full.');}
+}
+function uid(){return 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+/* ============================ COMPARISON ============================ */
+function runComparison(){
+  const lib=loadLibrary();
+  const a=document.getElementById('cmpA').value;
+  const b=document.getElementById('cmpB').value;
+  const A=lib.find(x=>x.id===a), B=lib.find(x=>x.id===b);
+  if(!A||!B){document.getElementById('cmpOut').innerHTML='<div class="muted">Select two designs.</div>';return;}
+  const sa=simulateCycle(A.cfg), sb=simulateCycle(B.cfg);
+  const rows=[
+    ['Displacement (cc)',fmt(sa.geom.VdTotal*1e6,0),fmt(sb.geom.VdTotal*1e6,0)],
+    ['Bore/stroke',fmt(sa.geom.boreStroke,2),fmt(sb.geom.boreStroke,2)],
+    ['Compression ratio',fmt(sa.geom.CR,1),fmt(sb.geom.CR,1)],
+    ['Peak torque (N·m)',fmt(sa.perf.torque,1),fmt(sb.perf.torque,1)],
+    ['Peak power (kW)',fmt(sa.perf.pBrake/1000,2),fmt(sb.perf.pBrake/1000,2)],
+    ['Indicated efficiency (%)',fmt(sa.perf.etaInd*100,1),fmt(sb.perf.etaInd*100,1)],
+    ['Brake thermal efficiency (%)',fmt(sa.perf.etaBrake*100,1),fmt(sb.perf.etaBrake*100,1)],
+    ['BSFC (g/kWh)',fmt(sa.perf.bsfc,0),fmt(sb.perf.bsfc,0)],
+    ['Peak cylinder pressure (bar)',fmt(sa.perf.pMax/1e5,1),fmt(sb.perf.pMax/1e5,1)],
+    ['Peak temperature (K)',fmt(sa.perf.TMax,0),fmt(sb.perf.TMax,0)],
+    ['Exhaust temperature (°C)',fmt(sa.Texh-273.15,0),fmt(sb.Texh-273.15,0)],
+    ['FMEP (bar)',fmt(sa.perf.fmepBar,2),fmt(sb.perf.fmepBar,2)],
+    ['Volumetric efficiency (%)',fmt(sa.gas.etaV*100,1),fmt(sb.gas.etaV*100,1)],
+    ['λ',fmt(sa.gas.lambda,2),fmt(sb.gas.lambda,2)],
+  ];
+  const html=`
+    <div class="grid2">
+      <div><h3>${A.name}</h3><div class="mini">${A.cfg.architecture.cylinders} cyl · ${FUELS[A.cfg.architecture.fuel].short}</div></div>
+      <div><h3>${B.name}</h3><div class="mini">${B.cfg.architecture.cylinders} cyl · ${FUELS[B.cfg.architecture.fuel].short}</div></div>
+    </div>
+    <table class="t mt8">
+      <thead><tr><th>Metric</th><th>${A.name}</th><th>${B.name}</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody>
+    </table>
+    <div class="help mt8">Metrics are computed at each design's own stored operating point. A direct
+    performance ranking is only meaningful if the operating points are comparable. The simulator does not
+    declare one design "better" — the trade-offs (efficiency, power, thermal load, complexity) depend on
+    the application.</div>`;
+  document.getElementById('cmpOut').innerHTML=html;
+}
+
+/* ============================ EXPERIMENT HISTORY ============================ */
+const HISTORY=[];
+function pushHistory(){
+  if(!STATE.cycle)return;
+  HISTORY.push({
+    t:new Date().toLocaleTimeString(),
+    rpm:STATE.cfg.operating.rpm,
+    bore:STATE.cfg.geometry.bore_mm,
+    cr:STATE.cfg.geometry.compressionRatio,
+    lambda:STATE.gas.lambda,
+    power:STATE.perf.pBrake/1000,
+    eff:STATE.perf.etaBrake*100
+  });
+  if(HISTORY.length>25)HISTORY.shift();
+  if(STATE.activeTab==='diagnostics')renderHistory();
+}
+function renderHistory(){
+  const box=document.getElementById('historyBox');
+  if(!box)return;
+  box.innerHTML=HISTORY.slice().reverse().map(h=>`
+    <div class="row"><span class="k">${h.t}</span><span class="v">${fmt(h.rpm,0)} rpm · B ${fmt(h.bore,1)} · CR ${fmt(h.cr,1)} · λ ${fmt(h.lambda,2)} → ${fmt(h.power,2)} kW @ ${fmt(h.eff,1)}%</span></div>
+  `).join('')||'<div class="muted">No history yet.</div>';
+}
+
+/* ============================ RECOMPUTE ============================ */
+let sweepTimer=null;
+function recompute(){
+  try{
+    const cyc=simulateCycle(STATE.cfg);
+    STATE.cycle=cyc;
+    STATE.geom=cyc.geom;
+    STATE.gas=cyc.gas;
+    STATE.perf=cyc.perf;
+    STATE.diags=generateDiagnostics(STATE.cfg,cyc.geom,cyc.gas,cyc,cyc.perf);
+    STATE.error=null;
+    clearTimeout(sweepTimer);
+    sweepTimer=setTimeout(()=>{
+      STATE.sweep=computeSweep(STATE.cfg);
+      if(STATE.activeTab==='air'||STATE.activeTab==='analysis')drawTabCharts(STATE.activeTab);
+    },120);
+  }catch(e){
+    STATE.error=e.message;
+    console.error(e);
+  }
+}
+
+/* ============================ INIT ============================ */
+function init(){
+  registerOutputs();
+  // tabs
+  document.querySelectorAll('#tabs button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      STATE.activeTab=b.dataset.tab;
+      renderActiveTab();
+      if(STATE.activeTab==='diagnostics')renderHistory();
+    });
+  });
+  // header toggles
+  document.getElementById('learnToggle').addEventListener('change',e=>{
+    UI.learn=e.target.checked;
+  });
+  document.getElementById('perfToggle').addEventListener('change',e=>{
+    UI.lowPerf=e.target.checked;
+  });
+  // modal
+  document.getElementById('modalClose').addEventListener('click',()=>{
+    document.getElementById('modal').classList.remove('open');
+  });
+  document.getElementById('modal').addEventListener('click',e=>{
+    if(e.target.id==='modal')document.getElementById('modal').classList.remove('open');
+  });
+  // animation controls
+  document.getElementById('animPlay').addEventListener('click',e=>{
+    ANIM.playing=!ANIM.playing;
+    e.target.textContent=ANIM.playing?'❚❚':'▶';
+  });
+  document.getElementById('animReset').addEventListener('click',()=>{
+    ANIM.theta=0; drawEngine(); updateLiveState();
+  });
+  document.getElementById('animSpeed').addEventListener('input',e=>{
+    ANIM.speed=parseFloat(e.target.value);
+  });
+  // library actions (delegated)
+  document.getElementById('main').addEventListener('click',e=>{
+    const t=e.target;
+    if(t.dataset.load){
+      const lib=loadLibrary(); const d=lib.find(x=>x.id===t.dataset.load);
+      if(d){STATE.cfg=deepClone(d.cfg); syncControls(); recompute(); updateTelemetry();
+        updateDiagnosticsMini(); renderActiveTab(); ANIM.theta=0;}
+    }
+    if(t.dataset.dup){
+      const lib=loadLibrary(); const d=lib.find(x=>x.id===t.dataset.dup);
+      if(d){lib.push({id:uid(),name:d.name+' (copy)',cfg:deepClone(d.cfg)}); saveLibrary(lib); renderActiveTab();}
+    }
+    if(t.dataset.ren){
+      const lib=loadLibrary(); const d=lib.find(x=>x.id===t.dataset.ren);
+      if(d){const n=prompt('Rename design:',d.name); if(n){d.name=n; saveLibrary(lib); renderActiveTab();}}
+    }
+    if(t.dataset.del){
+      const lib=loadLibrary();
+      if(confirm('Delete this design?')){
+        saveLibrary(lib.filter(x=>x.id!==t.dataset.del));
+        renderActiveTab();
+      }
+    }
+  });
+  // library buttons (need to rebind after each render)
+  document.getElementById('main').addEventListener('click',e=>{
+    if(e.target.id==='libSave'){
+      const lib=loadLibrary();
+      const name=prompt('Design name:',STATE.cfg.name||'New design');
+      if(!name)return;
+      STATE.cfg.name=name;
+      lib.push({id:uid(),name,cfg:deepClone(STATE.cfg)});
+      saveLibrary(lib); renderActiveTab(); updateDiagnosticsMini();
+    }
+    if(e.target.id==='libReset'){
+      STATE.cfg=deepClone(DEFAULT_CONFIG); syncControls(); recompute();
+      updateTelemetry(); updateDiagnosticsMini(); renderActiveTab();
+    }
+    if(e.target.id==='libExport'){
+      const blob=new Blob([JSON.stringify(STATE.cfg,null,2)],{type:'application/json'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=(STATE.cfg.name||'hice-design').replace(/[^\w\-]+/g,'_')+'.json';
+      a.click(); URL.revokeObjectURL(a.href);
+    }
+    if(e.target.id==='cmpRun')runComparison();
+  });
+  document.getElementById('main').addEventListener('change',e=>{
+    if(e.target.id==='libImport'&&e.target.files&&e.target.files[0]){
+      const f=e.target.files[0];
+      const r=new FileReader();
+      r.onload=()=>{
+        try{
+          const cfg=JSON.parse(r.result);
+          if(!cfg.architecture||!cfg.geometry)throw new Error('Not a valid design file');
+          const lib=loadLibrary();
+          lib.push({id:uid(),name:cfg.name||'Imported design',cfg});
+          saveLibrary(lib); renderActiveTab();
+        }catch(err){alert('Import failed: '+err.message);}
+      };
+      r.readAsText(f);
+    }
+  });
+  // first render
+  recompute();
+  renderActiveTab();
+  updateTelemetry();
+  updateDiagnosticsMini();
+  requestAnimationFrame(tick);
+  // keyboard shortcut: space to play/pause when not in an input
+  window.addEventListener('keydown',e=>{
+    if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){
+      e.preventDefault();
+      ANIM.playing=!ANIM.playing;
+      document.getElementById('animPlay').textContent=ANIM.playing?'❚❚':'▶';
+    }
+  });
+  // redraw charts on resize (debounced)
+  let rt=null;
+  window.addEventListener('resize',()=>{
+    clearTimeout(rt); rt=setTimeout(()=>drawTabCharts(STATE.activeTab),150);
+  });
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
